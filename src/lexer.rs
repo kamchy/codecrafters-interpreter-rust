@@ -26,6 +26,8 @@ impl<'a> Iterator for Lexer<'a> {
             match c {
                 '(' => Some(Token::LeftParen),
                 ')' => Some(Token::RightParen),
+                '{' => Some(Token::LeftBrace),
+                '}' => Some(Token::RightBrace),
                 _ => Some(Token::Unknown),
             }
         } else {
