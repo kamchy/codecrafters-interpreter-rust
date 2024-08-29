@@ -28,6 +28,14 @@ impl<'a> Iterator for Lexer<'a> {
                 ')' => Some(Token::RightParen),
                 '{' => Some(Token::LeftBrace),
                 '}' => Some(Token::RightBrace),
+                '*' => Some(Token::Star),
+                '+' => Some(Token::Plus),
+
+                '-' => Some(Token::Minus),
+                '.' => Some(Token::Dot),
+                ',' => Some(Token::Comma),
+                ';' => Some(Token::Semicolon),
+
                 _ => Some(Token::Unknown),
             }
         } else {
