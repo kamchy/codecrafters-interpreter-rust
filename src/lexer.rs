@@ -36,7 +36,7 @@ impl<'a> Iterator for Lexer<'a> {
                 ',' => Some(Token::Comma),
                 ';' => Some(Token::Semicolon),
 
-                _ => Some(Token::Unknown),
+                _ => Some(Token::Unknown(c)),
             }
         } else {
             if !self.at_end {
