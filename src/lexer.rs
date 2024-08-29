@@ -1,16 +1,13 @@
-use std::char;
-
 use crate::token::Token;
+use std::{iter::Peekable, str::Chars};
 pub(crate) struct Lexer<'a> {
-    // s: &'a str,
-    iter: Box<dyn Iterator<Item = char> + 'a>,
+    iter: Peekable<Chars<'a>>,
     at_end: bool,
 }
 impl<'a> Lexer<'a> {
     pub(crate) fn new(s: &'a str) -> Self {
         Lexer {
-            // s,
-            iter: Box::new(s.chars()),
+            iter: s.chars().peekable(),
             at_end: false,
         }
     }
@@ -20,8 +17,7 @@ impl<'a> Iterator for Lexer<'a> {
     type Item = Token;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let chariter = &mut self.iter;
-        let mut p = chariter.peekable();
+        let p = &mut self.iter;
         if let Some(c) = p.next() {
             match c {
                 '(' => Some(Token::LeftParen),
@@ -35,6 +31,14 @@ impl<'a> Iterator for Lexer<'a> {
                 '.' => Some(Token::Dot),
                 ',' => Some(Token::Comma),
                 ';' => Some(Token::Semicolon),
+                '=' => {
+                    let next = p.peek();
+                    match next {
+                        Some('=') => Some(Token::EqualEqual),
+                        Some(_) => Some(Token::Equal),
+                        None => Some(Token::Equal),
+                    }
+                }
 
                 _ => Some(Token::Unknown(c)),
             }
