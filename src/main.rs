@@ -31,6 +31,9 @@ fn main() {
 fn tokenize(s: &str) {
     let lexer = lexer::Lexer::new(s);
     for token in lexer {
-        println!("{}", token);
+        match token {
+            token::Token::Unknown(c) => eprintln!("[line 1] Error: Unexpected character: {}", c),
+            _ => println!("{}", token),
+        }
     }
 }

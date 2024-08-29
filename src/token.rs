@@ -13,7 +13,7 @@ pub(crate) enum Token {
     Plus,
     Minus,
     Semicolon,
-    Unknown,
+    Unknown(char),
     Eof,
 }
 
@@ -30,7 +30,7 @@ impl Display for Token {
             Self::Plus => f.write_str("PLUS + null"),
             Self::Minus => f.write_str("MINUS - null"),
             Self::Semicolon => f.write_str("SEMICOLON ; null"),
-            Self::Unknown => f.write_str("UNKNOWN_TOKEN"),
+            Self::Unknown(c) => f.write_fmt(format_args!("UNKNOWN_TOKEN {}", c)),
             Self::Eof => f.write_str("EOF  null"),
         }
     }
