@@ -11,6 +11,20 @@ impl<'a> Lexer<'a> {
             at_end: false,
         }
     }
+    fn match_or_skip(&mut self) -> Option<Token> {
+        let p = &mut self.iter;
+        let next = p.peek();
+        match next {
+            Some(w) if *w != '/' => {
+                p.next();
+                Some(Token::Slash)
+            }
+            _ => {
+                let _ = p.skip_while(|x| x.is_ascii_alphanumeric());
+                None
+            }
+        }
+    }
     fn match_next(&mut self, c: char, matching: Token, other: Token) -> Option<Token> {
         let p = &mut self.iter;
 
@@ -48,6 +62,8 @@ impl<'a> Iterator for Lexer<'a> {
                 '>' => self.match_next('=', Token::GreaterEqual, Token::Greater),
                 '<' => self.match_next('=', Token::LessEqual, Token::Less),
                 '!' => self.match_next('=', Token::BangEqual, Token::Bang),
+                '/' => self.match_or_skip(),
+
                 _ => Some(Token::Unknown(c)),
             }
         } else {
