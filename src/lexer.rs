@@ -47,7 +47,7 @@ impl<'a> Iterator for Lexer<'a> {
                 '=' => self.match_next('=', Token::EqualEqual, Token::Equal),
                 '>' => self.match_next('=', Token::GreaterEqual, Token::Greater),
                 '<' => self.match_next('=', Token::LessEqual, Token::Less),
-                '!' => self.match_next('=', Token::BangEqual, Token::Equal),
+                '!' => self.match_next('=', Token::BangEqual, Token::Bang),
                 _ => Some(Token::Unknown(c)),
             }
         } else {
