@@ -34,7 +34,10 @@ impl<'a> Iterator for Lexer<'a> {
                 '=' => {
                     let next = p.peek();
                     match next {
-                        Some('=') => Some(Token::EqualEqual),
+                        Some('=') => {
+                            p.next();
+                            Some(Token::EqualEqual)
+                        }
                         Some(_) => Some(Token::Equal),
                         None => Some(Token::Equal),
                     }
