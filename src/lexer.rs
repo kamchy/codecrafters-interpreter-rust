@@ -11,6 +11,19 @@ impl<'a> Lexer<'a> {
             at_end: false,
         }
     }
+    fn match_next(&mut self, c: char, matching: Token, other: Token) -> Option<Token> {
+        let p = &mut self.iter;
+
+        let next = p.peek();
+        match next {
+            Some(w) if *w == c => {
+                p.next();
+                Some(matching)
+            }
+            Some(_) => Some(other),
+            None => Some(other),
+        }
+    }
 }
 
 impl<'a> Iterator for Lexer<'a> {
@@ -31,18 +44,10 @@ impl<'a> Iterator for Lexer<'a> {
                 '.' => Some(Token::Dot),
                 ',' => Some(Token::Comma),
                 ';' => Some(Token::Semicolon),
-                '=' => {
-                    let next = p.peek();
-                    match next {
-                        Some('=') => {
-                            p.next();
-                            Some(Token::EqualEqual)
-                        }
-                        Some(_) => Some(Token::Equal),
-                        None => Some(Token::Equal),
-                    }
-                }
-
+                '=' => self.match_next('=', Token::EqualEqual, Token::Equal),
+                '>' => self.match_next('=', Token::GreaterEqual, Token::Greater),
+                '<' => self.match_next('=', Token::LessEqual, Token::Less),
+                '!' => self.match_next('=', Token::BangEqual, Token::Equal),
                 _ => Some(Token::Unknown(c)),
             }
         } else {

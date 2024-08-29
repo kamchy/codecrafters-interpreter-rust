@@ -15,6 +15,11 @@ pub(crate) enum Token {
     Semicolon,
     Equal,
     EqualEqual,
+    BangEqual,
+    LessEqual,
+    GreaterEqual,
+    Less,
+    Greater,
     Unknown(char),
     Eof,
 }
@@ -34,6 +39,11 @@ impl Display for Token {
             Self::Semicolon => f.write_str("SEMICOLON ; null"),
             Self::Equal => f.write_str("EQUAL = null"),
             Self::EqualEqual => f.write_str("EQUAL_EQUAL == null"),
+            Self::BangEqual => f.write_str("BANG_EQUAL != null"),
+            Self::LessEqual => f.write_str("LESS_EQUAL <= null"),
+            Self::GreaterEqual => f.write_str("GREATER_EQUAL >= null"),
+            Self::Less => f.write_str("LESS < null"),
+            Self::Greater => f.write_str("GREATER > null"),
             Self::Unknown(c) => f.write_fmt(format_args!("UNKNOWN_TOKEN {}", c)),
             Self::Eof => f.write_str("EOF  null"),
         }
