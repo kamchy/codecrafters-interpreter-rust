@@ -56,6 +56,7 @@ mod tests {
     fn it_works() {
         assert_eq!(tokenize_string("("), vec![Token::LeftParen, Token::Eof]);
     }
+
     #[test]
     fn number12() {
         assert_eq!(
@@ -162,7 +163,7 @@ mod tests {
                 Token::Number("12.5".to_string(), Numeric(12.5f64)),
                 Token::Unknown(1, LexicalError::UnknownToken('%')),
                 Token::Number("23".to_string(), Numeric(23f64)),
-                Token::Unknown(3, LexicalError::InvalidNumber),
+                Token::Number("6.34".to_string(), Numeric(6.34f64)),
                 Token::Unknown(3, LexicalError::UnknownToken('f')),
                 Token::Eof
             ]
@@ -174,7 +175,7 @@ mod tests {
         assert_eq!(
             tokenize_string("12.5a"),
             vec![
-                Token::Unknown(0, LexicalError::InvalidNumber),
+                Token::Number("12.5".to_string(), Numeric(12.5f64)),
                 Token::Unknown(0, LexicalError::UnknownToken('a')),
                 Token::Eof
             ]
@@ -193,5 +194,38 @@ mod tests {
         if let Some(v) = tokenize_string("65.1234").first() {
             assert_eq!(v.to_string(), "NUMBER 65.1234 65.1234");
         }
+    }
+
+    fn compare(text: &str, result: &str) {
+        let actual: String = tokenize_string(text)
+            .iter()
+            .map(|t| t.to_string())
+            .collect::<Vec<String>>()
+            .join("\n");
+        assert_eq!(result, actual);
+    }
+    #[test]
+    fn shoould_parse_correctly() {
+        let text = r#""quz" = "bar" != (71 == 98)"#;
+        let result = r#"STRING "quz" quz
+EQUAL = null
+STRING "bar" bar
+BANG_EQUAL != null
+LEFT_PAREN ( null
+NUMBER 71 71.0
+EQUAL_EQUAL == null
+NUMBER 98 98.0
+RIGHT_PAREN ) null
+EOF  null"#;
+
+        compare(text, result);
+    }
+
+    #[test]
+    fn minimal_problem() {
+        compare(
+            r#" == 98)"#,
+            "EQUAL_EQUAL == null\nNUMBER 98 98.0\nRIGHT_PAREN ) null\nEOF  null",
+        )
     }
 }

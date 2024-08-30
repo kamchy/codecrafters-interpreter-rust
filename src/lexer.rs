@@ -91,15 +91,9 @@ impl<'a> Lexer<'a> {
                     }
                 }
                 Some(c) if c.is_whitespace() => {
-                    // if *c == '\n' {
-                    //     self.line += 1;
-                    // }
                     break self.try_parse(&val_str);
                 }
-                None => break self.try_parse(&val_str),
-                _ => {
-                    break Some(Token::Unknown(self.line, LexicalError::InvalidNumber));
-                }
+                _ => break self.try_parse(&val_str),
             }
             p.next();
             curr = p.peek();
