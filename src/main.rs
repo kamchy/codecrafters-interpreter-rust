@@ -180,4 +180,11 @@ mod tests {
             ]
         )
     }
+
+    #[test]
+    fn parsing_number_should_display_dotzero() {
+        if let Some(v) = tokenize_string("65").first() {
+            assert_eq!(v.to_string(), "NUMBER 65 65.0");
+        }
+    }
 }
