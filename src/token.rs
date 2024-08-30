@@ -48,7 +48,7 @@ impl Display for Token {
             Self::GreaterEqual => f.write_str("GREATER_EQUAL >= null"),
             Self::Less => f.write_str("LESS < null"),
             Self::Greater => f.write_str("GREATER > null"),
-            Self::Slash => f.write_str("SLASH /  null"),
+            Self::Slash => f.write_str("SLASH / null"),
             Self::Unknown(c) => f.write_fmt(format_args!("UNKNOWN_TOKEN {}", c)),
             Self::Eof => f.write_str("EOF  null"),
         }
