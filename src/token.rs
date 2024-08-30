@@ -1,5 +1,5 @@
+use crate::lexer::LineNum;
 use std::fmt::Display;
-
 ///
 /// Lex language token
 #[derive(Eq, PartialEq, Clone)]
@@ -22,7 +22,7 @@ pub(crate) enum Token {
     Less,
     GreaterEqual,
     Greater,
-    Unknown(char),
+    Unknown(char, LineNum),
     Slash,
     Eof,
 }
@@ -49,7 +49,7 @@ impl Display for Token {
             Self::Less => f.write_str("LESS < null"),
             Self::Greater => f.write_str("GREATER > null"),
             Self::Slash => f.write_str("SLASH / null"),
-            Self::Unknown(c) => f.write_fmt(format_args!("UNKNOWN_TOKEN {}", c)),
+            Self::Unknown(c, _) => f.write_fmt(format_args!("UNKNOWN_TOKEN {}", c)),
             Self::Eof => f.write_str("EOF  null"),
         }
     }

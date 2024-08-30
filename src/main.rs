@@ -34,8 +34,8 @@ fn tokenize(s: &str) -> ExitCode {
     let mut exit_code = ExitCode::SUCCESS;
     for token in lexer {
         match token {
-            token::Token::Unknown(c) => {
-                eprintln!("[line 1] Error: Unexpected character: {}", c);
+            token::Token::Unknown(c, line_num) => {
+                eprintln!("[line {}] Error: Unexpected character: {}", line_num, c);
                 exit_code = ExitCode::from(65);
             }
             _ => println!("{}", token),
