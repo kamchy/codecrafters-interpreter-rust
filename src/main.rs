@@ -158,13 +158,14 @@ mod tests {
     #[test]
     fn invalid_2_and_4_line() {
         assert_eq!(
-            tokenize_string("12.5\n%\n23\n6.34f"),
+            tokenize_string("12.5\n%\n23\n6.34f #"),
             vec![
                 Token::Number("12.5".to_string(), Numeric(12.5f64)),
                 Token::Unknown(2, LexicalError::UnknownToken('%')),
                 Token::Number("23".to_string(), Numeric(23f64)),
                 Token::Number("6.34".to_string(), Numeric(6.34f64)),
-                Token::Unknown(4, LexicalError::UnknownToken('f')),
+                Token::Identifier("f".to_string()),
+                Token::Unknown(4, LexicalError::UnknownToken('#')),
                 Token::Eof
             ]
         )
@@ -176,7 +177,7 @@ mod tests {
             tokenize_string("12.5a"),
             vec![
                 Token::Number("12.5".to_string(), Numeric(12.5f64)),
-                Token::Unknown(1, LexicalError::UnknownToken('a')),
+                Token::Identifier("a".to_string()),
                 Token::Eof
             ]
         )
@@ -248,7 +249,7 @@ EOF  null"#;
     fn parse_ident_invalid_ident() {
         compare(
             "bar fooą",
-            "IDENTIFIER bar null\n[line 1] Error: Invalid identifier.\nEOF  null",
+            "IDENTIFIER bar null\nIDENTIFIER foo null\n[line 1] Error: Unexpected character: ą\nEOF  null"
         );
     }
 
