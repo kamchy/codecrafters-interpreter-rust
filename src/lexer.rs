@@ -16,6 +16,7 @@ impl<'a> Lexer<'a> {
         let next = p.peek();
         match next {
             Some(w) if *w != '/' => Some(Token::Slash),
+            None => Some(Token::Slash),
             _ => {
                 loop {
                     match p.next() {
