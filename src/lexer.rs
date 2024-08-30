@@ -1,3 +1,4 @@
+use crate::token::LexicalError;
 use crate::token::Token;
 use std::{iter::Peekable, str::Chars};
 pub type LineNum = u64;
@@ -48,6 +49,25 @@ impl<'a> Lexer<'a> {
             None => Some(other),
         }
     }
+
+    fn parse_string(&mut self) -> Option<Token> {
+        let mut literal = String::new();
+        let p = &mut self.iter;
+
+        loop {
+            match p.next() {
+                Some('\"') => break Some(Token::StringLiteral(literal)),
+                Some('\n') => {
+                    self.line += 1;
+                    break Some(Token::Unknown(self.line, LexicalError::UnterminatedString));
+                }
+                None => {
+                    break Some(Token::Unknown(self.line, LexicalError::UnterminatedString));
+                }
+                Some(c) => literal.push(c),
+            }
+        }
+    }
 }
 
 impl<'a> Iterator for Lexer<'a> {
@@ -73,12 +93,16 @@ impl<'a> Iterator for Lexer<'a> {
                 '<' => self.match_next('=', Token::LessEqual, Token::Less),
                 '!' => self.match_next('=', Token::BangEqual, Token::Bang),
                 '/' => self.match_or_skip(),
+                '\"' => self.parse_string(),
                 '\n' => {
                     self.line += 1;
                     self.next()
                 }
                 sp if sp.is_ascii_whitespace() => self.next(),
-                _ => Some(Token::Unknown(c, self.line)),
+                unknown => Some(Token::Unknown(
+                    self.line,
+                    LexicalError::UnknownToken(unknown),
+                )),
             }
         } else {
             if !self.at_end {

@@ -1,6 +1,22 @@
 use crate::lexer::LineNum;
 use std::fmt::Display;
-///
+#[derive(PartialEq, Eq, Clone)]
+pub(crate) enum LexicalError {
+    UnknownToken(char),
+    UnterminatedString,
+}
+
+impl Display for LexicalError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::UnknownToken(c) => {
+                f.write_fmt(format_args!("Error: Unexpected character: {}", c))
+            }
+
+            Self::UnterminatedString => f.write_str("Error: Unterminated string."),
+        }
+    }
+}
 /// Lex language token
 #[derive(Eq, PartialEq, Clone)]
 pub(crate) enum Token {
@@ -22,7 +38,8 @@ pub(crate) enum Token {
     Less,
     GreaterEqual,
     Greater,
-    Unknown(char, LineNum),
+    Unknown(LineNum, LexicalError),
+    StringLiteral(String),
     Slash,
     Eof,
 }
@@ -49,7 +66,8 @@ impl Display for Token {
             Self::Less => f.write_str("LESS < null"),
             Self::Greater => f.write_str("GREATER > null"),
             Self::Slash => f.write_str("SLASH / null"),
-            Self::Unknown(c, _) => f.write_fmt(format_args!("UNKNOWN_TOKEN {}", c)),
+            Self::StringLiteral(s) => f.write_fmt(format_args!("STRING \"{0}\" {0}", s.as_str())),
+            Self::Unknown(_, lexerr) => f.write_fmt(format_args!("{}", lexerr)),
             Self::Eof => f.write_str("EOF  null"),
         }
     }
