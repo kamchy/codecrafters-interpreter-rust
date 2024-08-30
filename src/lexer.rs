@@ -26,7 +26,10 @@ impl<'a> Lexer<'a> {
                         self.at_end = true;
                         break Some(Token::Eof);
                     }
-                    Some('\n') => break self.next(),
+                    Some('\n') => {
+                        self.line += 1;
+                        break self.next();
+                    }
                     _ => continue,
                 }
             },
