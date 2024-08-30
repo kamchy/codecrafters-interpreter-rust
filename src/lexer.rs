@@ -1,4 +1,5 @@
 use crate::token::LexicalError;
+use crate::token::Numeric;
 use crate::token::Token;
 use std::{iter::Peekable, str::Chars};
 pub type LineNum = u64;
@@ -12,7 +13,7 @@ impl<'a> Lexer<'a> {
         Lexer {
             iter: s.chars().peekable(),
             at_end: false,
-            line: 1,
+            line: 0,
         }
     }
     fn match_or_skip(&mut self) -> Option<Token> {
@@ -68,6 +69,42 @@ impl<'a> Lexer<'a> {
             }
         }
     }
+    fn try_parse(&self, val_str: &str) -> Option<Token> {
+        if let Ok(val) = val_str.parse::<Numeric>() {
+            Some(Token::Number(val_str.to_string(), val))
+        } else {
+            Some(Token::Unknown(self.line, LexicalError::InvalidNumber))
+        }
+    }
+    fn parse_number(&mut self, first: char) -> Option<Token> {
+        let mut val_str = String::from(first);
+        let p = &mut self.iter;
+        let mut curr = p.peek();
+        loop {
+            match curr {
+                Some(c) if c.is_digit(10) => val_str.push(*c),
+                Some('.') => {
+                    if val_str.contains('.') {
+                        break Some(Token::Unknown(self.line, LexicalError::InvalidNumber));
+                    } else {
+                        val_str.push('.');
+                    }
+                }
+                Some(c) if c.is_whitespace() => {
+                    // if *c == '\n' {
+                    //     self.line += 1;
+                    // }
+                    break self.try_parse(&val_str);
+                }
+                None => break self.try_parse(&val_str),
+                _ => {
+                    break Some(Token::Unknown(self.line, LexicalError::InvalidNumber));
+                }
+            }
+            p.next();
+            curr = p.peek();
+        }
+    }
 }
 
 impl<'a> Iterator for Lexer<'a> {
@@ -99,6 +136,7 @@ impl<'a> Iterator for Lexer<'a> {
                     self.next()
                 }
                 sp if sp.is_ascii_whitespace() => self.next(),
+                d if d.is_digit(10) || d == '.' => self.parse_number(d),
                 unknown => Some(Token::Unknown(
                     self.line,
                     LexicalError::UnknownToken(unknown),

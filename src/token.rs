@@ -1,11 +1,11 @@
 use crate::lexer::LineNum;
-use std::fmt::Display;
-#[derive(PartialEq, Eq, Clone)]
+use std::{fmt::Display, str::FromStr};
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub(crate) enum LexicalError {
     UnknownToken(char),
     UnterminatedString,
+    InvalidNumber,
 }
-
 impl Display for LexicalError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -14,11 +14,28 @@ impl Display for LexicalError {
             }
 
             Self::UnterminatedString => f.write_str("Error: Unterminated string."),
+            Self::InvalidNumber => f.write_str("Error: Invalid number."),
         }
     }
 }
+// newtype for float
+#[derive(Clone, PartialEq, Debug)]
+pub(crate) struct Numeric(pub f64);
+impl Display for Numeric {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_fmt(format_args!("{}", self.0))
+    }
+}
+impl FromStr for Numeric {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        s.parse::<f64>()
+            .map(|f| Numeric(f))
+            .map_err(|e| e.to_string())
+    }
+}
 /// Lex language token
-#[derive(Eq, PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub(crate) enum Token {
     LeftParen,
     RightParen,
@@ -40,6 +57,7 @@ pub(crate) enum Token {
     Greater,
     Unknown(LineNum, LexicalError),
     StringLiteral(String),
+    Number(String, Numeric),
     Slash,
     Eof,
 }
@@ -67,6 +85,7 @@ impl Display for Token {
             Self::Greater => f.write_str("GREATER > null"),
             Self::Slash => f.write_str("SLASH / null"),
             Self::StringLiteral(s) => f.write_fmt(format_args!("STRING \"{0}\" {0}", s.as_str())),
+            Self::Number(s, v) => f.write_fmt(format_args!("NUMBER {} {}", s.as_str(), v)),
             Self::Unknown(_, lexerr) => f.write_fmt(format_args!("{}", lexerr)),
             Self::Eof => f.write_str("EOF  null"),
         }
