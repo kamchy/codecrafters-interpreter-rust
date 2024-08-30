@@ -187,4 +187,11 @@ mod tests {
             assert_eq!(v.to_string(), "NUMBER 65 65.0");
         }
     }
+
+    #[test]
+    fn parsing_number_should_display_all_decimal_digits() {
+        if let Some(v) = tokenize_string("65.1234").first() {
+            assert_eq!(v.to_string(), "NUMBER 65.1234 65.1234");
+        }
+    }
 }
