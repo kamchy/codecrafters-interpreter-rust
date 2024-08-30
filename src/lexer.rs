@@ -15,13 +15,16 @@ impl<'a> Lexer<'a> {
         let p = &mut self.iter;
         let next = p.peek();
         match next {
-            Some(w) if *w != '/' => {
-                p.next();
-                Some(Token::Slash)
-            }
+            Some(w) if *w != '/' => Some(Token::Slash),
             _ => {
-                let _ = p.skip_while(|x| x.is_ascii_alphanumeric());
-                None
+                loop {
+                    match p.next() {
+                        None => break,
+                        _ => continue,
+                    }
+                }
+                self.at_end = true;
+                Some(Token::Eof)
             }
         }
     }
