@@ -67,6 +67,7 @@ impl<'a> Iterator for Lexer<'a> {
                 '<' => self.match_next('=', Token::LessEqual, Token::Less),
                 '!' => self.match_next('=', Token::BangEqual, Token::Bang),
                 '/' => self.match_or_skip(),
+                sp if sp.is_ascii_whitespace() => self.next(),
 
                 _ => Some(Token::Unknown(c)),
             }
