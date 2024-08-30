@@ -1,5 +1,6 @@
 use crate::lexer::LineNum;
 use std::{fmt::Display, str::FromStr};
+
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub(crate) enum LexicalError {
     UnknownToken(char),
@@ -56,6 +57,7 @@ pub(crate) enum Token {
     Unknown(LineNum, LexicalError),
     StringLiteral(String),
     Number(String, Numeric),
+    Identifier(String),
     Slash,
     Eof,
 }
@@ -83,6 +85,7 @@ impl Display for Token {
             Self::Greater => f.write_str("GREATER > null"),
             Self::Slash => f.write_str("SLASH / null"),
             Self::StringLiteral(s) => f.write_fmt(format_args!("STRING \"{0}\" {0}", s.as_str())),
+            Self::Identifier(s) => f.write_fmt(format_args!("IDENTIFIER {} null", s.as_str())),
             Self::Number(s, v) => f.write_fmt(format_args!("NUMBER {} {}", s.as_str(), v)),
             Self::Unknown(n, lex_err) => {
                 f.write_fmt(format_args!("[line {}] Error: {}", n, lex_err))

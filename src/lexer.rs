@@ -76,6 +76,7 @@ impl<'a> Lexer<'a> {
             Some(Token::Unknown(self.line, LexicalError::InvalidNumber))
         }
     }
+
     fn parse_number(&mut self, first: char) -> Option<Token> {
         let mut val_str = String::from(first);
         let p = &mut self.iter;
@@ -94,6 +95,20 @@ impl<'a> Lexer<'a> {
                     break self.try_parse(&val_str);
                 }
                 _ => break self.try_parse(&val_str),
+            }
+            p.next();
+            curr = p.peek();
+        }
+    }
+
+    fn parse_ident(&mut self, first: char) -> Option<Token> {
+        let mut val_str = String::from(first);
+        let p = &mut self.iter;
+        let mut curr = p.peek();
+        loop {
+            match curr {
+                Some(c) if c.is_ascii_alphanumeric() || *c == '_' => val_str.push(*c),
+                _ => break Some(Token::Identifier(val_str)),
             }
             p.next();
             curr = p.peek();
@@ -131,6 +146,7 @@ impl<'a> Iterator for Lexer<'a> {
                 }
                 sp if sp.is_ascii_whitespace() => self.next(),
                 d if d.is_digit(10) || d == '.' => self.parse_number(d),
+                a if a.is_ascii_alphabetic() || a == '_' => self.parse_ident(a),
                 unknown => Some(Token::Unknown(
                     self.line,
                     LexicalError::UnknownToken(unknown),

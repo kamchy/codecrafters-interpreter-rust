@@ -197,6 +197,7 @@ mod tests {
     }
 
     fn compare(text: &str, result: &str) {
+        eprintln!("Compare for text: {}\n", text);
         let actual: String = tokenize_string(text)
             .iter()
             .map(|t| t.to_string())
@@ -235,6 +236,27 @@ EOF  null"#;
         compare(
             "\"bar\" \"unterminated",
             "STRING \"bar\" bar\n[line 1] Error: Unterminated string.\nEOF  null",
+        );
+    }
+
+    #[test]
+    fn parse_ident() {
+        compare("bar", "IDENTIFIER bar null\nEOF  null");
+    }
+
+    #[test]
+    fn parse_ident_invalid_ident() {
+        compare(
+            "bar fooą",
+            "IDENTIFIER bar null\n[line 1] Error: Invalid identifier.\nEOF  null",
+        );
+    }
+
+    #[test]
+    fn parse_ident_unterm() {
+        compare(
+            "bar \"unterminated",
+            "IDENTIFIER bar null\n[line 1] Error: Unterminated string.\nEOF  null",
         );
     }
 }
