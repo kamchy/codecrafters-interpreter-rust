@@ -23,7 +23,7 @@ impl Display for LexicalError {
 pub(crate) struct Numeric(pub f64);
 impl Display for Numeric {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_fmt(format_args!("{}", self.0))
+        f.write_fmt(format_args!("{:.1}", self.0))
     }
 }
 impl FromStr for Numeric {
