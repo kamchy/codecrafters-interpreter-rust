@@ -39,8 +39,8 @@ fn tokenize(s: &str) -> ExitCode {
     let mut exit_code = ExitCode::SUCCESS;
     for token in lexer {
         match token {
-            token::Token::Unknown(line_num, lex_err) => {
-                eprintln!("[line {}] {}", line_num, lex_err);
+            token::Token::Unknown(_, _) => {
+                println!("{}", token);
                 exit_code = ExitCode::from(65);
             }
             _ => println!("{}", token),
@@ -138,7 +138,7 @@ mod tests {
         assert_eq!(
             tokenize_string("%"),
             vec![
-                Token::Unknown(0, LexicalError::UnknownToken('%')),
+                Token::Unknown(1, LexicalError::UnknownToken('%')),
                 Token::Eof
             ]
         )
@@ -149,22 +149,22 @@ mod tests {
             tokenize_string("12.5\n%"),
             vec![
                 Token::Number("12.5".to_string(), Numeric(12.5f64)),
-                Token::Unknown(1, LexicalError::UnknownToken('%')),
+                Token::Unknown(2, LexicalError::UnknownToken('%')),
                 Token::Eof
             ]
         )
     }
 
     #[test]
-    fn invalid_1_and_3_line() {
+    fn invalid_2_and_4_line() {
         assert_eq!(
             tokenize_string("12.5\n%\n23\n6.34f"),
             vec![
                 Token::Number("12.5".to_string(), Numeric(12.5f64)),
-                Token::Unknown(1, LexicalError::UnknownToken('%')),
+                Token::Unknown(2, LexicalError::UnknownToken('%')),
                 Token::Number("23".to_string(), Numeric(23f64)),
                 Token::Number("6.34".to_string(), Numeric(6.34f64)),
-                Token::Unknown(3, LexicalError::UnknownToken('f')),
+                Token::Unknown(4, LexicalError::UnknownToken('f')),
                 Token::Eof
             ]
         )
@@ -176,7 +176,7 @@ mod tests {
             tokenize_string("12.5a"),
             vec![
                 Token::Number("12.5".to_string(), Numeric(12.5f64)),
-                Token::Unknown(0, LexicalError::UnknownToken('a')),
+                Token::Unknown(1, LexicalError::UnknownToken('a')),
                 Token::Eof
             ]
         )
@@ -204,6 +204,7 @@ mod tests {
             .join("\n");
         assert_eq!(result, actual);
     }
+
     #[test]
     fn shoould_parse_correctly() {
         let text = r#""quz" = "bar" != (71 == 98)"#;
@@ -227,5 +228,13 @@ EOF  null"#;
             r#" == 98)"#,
             "EQUAL_EQUAL == null\nNUMBER 98 98.0\nRIGHT_PAREN ) null\nEOF  null",
         )
+    }
+
+    #[test]
+    fn parse_unterminated() {
+        compare(
+            "\"bar\" \"unterminated",
+            "STRING \"bar\" bar\n[line 1] Error: Unterminated string.\nEOF  null",
+        );
     }
 }

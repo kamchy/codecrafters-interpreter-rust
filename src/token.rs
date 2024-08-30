@@ -9,12 +9,10 @@ pub(crate) enum LexicalError {
 impl Display for LexicalError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::UnknownToken(c) => {
-                f.write_fmt(format_args!("Error: Unexpected character: {}", c))
-            }
+            Self::UnknownToken(c) => f.write_fmt(format_args!("Unexpected character: {}", c)),
 
-            Self::UnterminatedString => f.write_str("Error: Unterminated string."),
-            Self::InvalidNumber => f.write_str("Error: Invalid number."),
+            Self::UnterminatedString => f.write_str("Unterminated string."),
+            Self::InvalidNumber => f.write_str("Invalid number."),
         }
     }
 }
@@ -86,7 +84,9 @@ impl Display for Token {
             Self::Slash => f.write_str("SLASH / null"),
             Self::StringLiteral(s) => f.write_fmt(format_args!("STRING \"{0}\" {0}", s.as_str())),
             Self::Number(s, v) => f.write_fmt(format_args!("NUMBER {} {}", s.as_str(), v)),
-            Self::Unknown(_, lexerr) => f.write_fmt(format_args!("{}", lexerr)),
+            Self::Unknown(n, lex_err) => {
+                f.write_fmt(format_args!("[line {}] Error: {}", n, lex_err))
+            }
             Self::Eof => f.write_str("EOF  null"),
         }
     }

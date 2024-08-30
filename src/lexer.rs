@@ -13,7 +13,7 @@ impl<'a> Lexer<'a> {
         Lexer {
             iter: s.chars().peekable(),
             at_end: false,
-            line: 0,
+            line: 1,
         }
     }
     fn match_or_skip(&mut self) -> Option<Token> {
