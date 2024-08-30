@@ -40,7 +40,7 @@ fn tokenize(s: &str) -> ExitCode {
     for token in lexer {
         match token {
             token::Token::Unknown(_, _) => {
-                println!("{}", token);
+                eprintln!("{}", token);
                 exit_code = ExitCode::from(65);
             }
             _ => println!("{}", token),
