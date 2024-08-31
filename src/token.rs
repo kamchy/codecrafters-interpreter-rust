@@ -60,6 +60,23 @@ pub(crate) enum Token {
     Identifier(String),
     Slash,
     Eof,
+    /* Reserved words */
+    And,
+    Class,
+    Else,
+    False,
+    For,
+    Fun,
+    If,
+    Nil,
+    Or,
+    Print,
+    Return,
+    Super,
+    This,
+    True,
+    Var,
+    While,
 }
 
 impl Display for Token {
@@ -91,6 +108,22 @@ impl Display for Token {
                 f.write_fmt(format_args!("[line {}] Error: {}", n, lex_err))
             }
             Self::Eof => f.write_str("EOF  null"),
+            Self::And => f.write_str("AND and null"),
+            Self::Class => f.write_str("CLASS class null"),
+            Self::Else => f.write_str("ELSE else null"),
+            Self::False => f.write_str("FALSE false null"),
+            Self::For => f.write_str("FOR for null"),
+            Self::Fun => f.write_str("FUN fun null"),
+            Self::If => f.write_str("IF if null"),
+            Self::Nil => f.write_str("NIL nil null"),
+            Self::Or => f.write_str("OR or null"),
+            Self::Print => f.write_str("PRINT print null"),
+            Self::Return => f.write_str("RETURN return null"),
+            Self::Super => f.write_str("SUPER super null"),
+            Self::This => f.write_str("THIS this null"),
+            Self::True => f.write_str("TRUE true null"),
+            Self::Var => f.write_str("VAR var null"),
+            Self::While => f.write_str("WHILE while null"),
         }
     }
 }
