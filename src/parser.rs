@@ -237,10 +237,11 @@ impl Display for Expression {
                 Token::True => f.write_str("true"),
                 Token::False => f.write_str("false"),
                 Token::Nil => f.write_str("nil"),
+                Token::Number(s, _) => f.write_str(s),
                 other => f.write_str(&other.to_string()),
             },
             Self::Binary(l, o, r) => f.write_fmt(format_args!("({} {} {})", o, l, r)),
-            Self::Unary(o, e) => f.write_fmt(format_args!("({} {})", o, e)),
+            Self::Unary(o, e) => f.write_fmt(format_args!("{}{}", o, e)),
             Self::Paren(e) => f.write_fmt(format_args!("({})", e)),
             Self::Invalid => f.write_str("Parse error"),
         }
@@ -250,6 +251,7 @@ impl Display for Expression {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::token::{Numeric, Token};
 
     #[test]
     fn parses_true() {
@@ -265,5 +267,17 @@ mod tests {
     fn parses_nil() {
         let mut p = Parser::new(vec![Token::Nil]);
         assert_eq!(p.parse().to_string(), "nil");
+    }
+
+    #[test]
+    fn parses_numeric() {
+        let mut p = Parser::new(vec![Token::Number("43.47".to_string(), Numeric(43.47f64))]);
+        assert_eq!(p.parse().to_string(), "43.47");
+    }
+
+    #[test]
+    fn parses_numeric_int() {
+        let mut p = Parser::new(vec![Token::Number("43".to_string(), Numeric(43f64))]);
+        assert_eq!(p.parse().to_string(), "43.0");
     }
 }

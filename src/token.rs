@@ -17,7 +17,8 @@ impl Display for LexicalError {
         }
     }
 }
-// newtype for float
+
+/// newtype for f64 to be used in Token::Number
 #[derive(Clone, PartialEq, Debug)]
 pub(crate) struct Numeric(pub f64);
 impl Display for Numeric {
