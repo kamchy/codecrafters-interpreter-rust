@@ -237,7 +237,7 @@ impl Display for Expression {
                 Token::True => f.write_str("true"),
                 Token::False => f.write_str("false"),
                 Token::Nil => f.write_str("nil"),
-                Token::Number(s, _) => f.write_str(s),
+                Token::Number(_, v) => f.write_str(&v.to_string()),
                 other => f.write_str(&other.to_string()),
             },
             Self::Binary(l, o, r) => f.write_fmt(format_args!("({} {} {})", o, l, r)),
