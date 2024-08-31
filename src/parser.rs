@@ -241,7 +241,7 @@ impl Display for Expression {
                 other => f.write_str(&other.to_string()),
             },
             Self::Binary(l, o, r) => f.write_fmt(format_args!("({} {} {})", o, l, r)),
-            Self::Unary(o, e) => f.write_fmt(format_args!("{}{}", o, e)),
+            Self::Unary(o, e) => f.write_fmt(format_args!("({} {})", o, e)),
             Self::Paren(e) => f.write_fmt(format_args!("(group {})", e)),
             Self::Invalid => f.write_str("Parse error"),
         }
@@ -289,5 +289,11 @@ mod tests {
             Token::RightParen,
         ]);
         assert_eq!(p.parse().to_string(), "(group foo)");
+    }
+
+    #[test]
+    fn parses_unary() {
+        let mut p = Parser::new(vec![Token::Bang, Token::True]);
+        assert_eq!(p.parse().to_string(), "(! true)");
     }
 }
