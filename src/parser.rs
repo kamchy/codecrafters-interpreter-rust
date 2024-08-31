@@ -5,7 +5,7 @@ pub(crate) struct Parser {
     tokens: Vec<Token>,
     curr: usize,
 }
-
+/// See https://craftinginterpreters.com/parsing-expressions.html#recursive-descent-parsing
 impl Parser {
     pub(crate) fn parse(&mut self) -> Expression {
         self.expression()
@@ -141,7 +141,6 @@ impl Parser {
             }
             _ => Expression::Invalid,
         };
-        self.advance();
         prim
     }
 }
@@ -243,7 +242,7 @@ impl Display for Expression {
             },
             Self::Binary(l, o, r) => f.write_fmt(format_args!("({} {} {})", o, l, r)),
             Self::Unary(o, e) => f.write_fmt(format_args!("{}{}", o, e)),
-            Self::Paren(e) => f.write_fmt(format_args!("({})", e)),
+            Self::Paren(e) => f.write_fmt(format_args!("(group {})", e)),
             Self::Invalid => f.write_str("Parse error"),
         }
     }
@@ -280,5 +279,15 @@ mod tests {
     fn parses_literal() {
         let mut p = Parser::new(vec![Token::StringLiteral("43".to_string())]);
         assert_eq!(p.parse().to_string(), "43");
+    }
+
+    #[test]
+    fn parses_paren() {
+        let mut p = Parser::new(vec![
+            Token::LeftParen,
+            Token::StringLiteral("foo".to_string()),
+            Token::RightParen,
+        ]);
+        assert_eq!(p.parse().to_string(), "(group foo)");
     }
 }
