@@ -238,6 +238,7 @@ impl Display for Expression {
                 Token::False => f.write_str("false"),
                 Token::Nil => f.write_str("nil"),
                 Token::Number(_, v) => f.write_str(&v.to_string()),
+                Token::StringLiteral(s) => f.write_str(s),
                 other => f.write_str(&other.to_string()),
             },
             Self::Binary(l, o, r) => f.write_fmt(format_args!("({} {} {})", o, l, r)),
@@ -276,8 +277,8 @@ mod tests {
     }
 
     #[test]
-    fn parses_numeric_int() {
-        let mut p = Parser::new(vec![Token::Number("43".to_string(), Numeric(43f64))]);
-        assert_eq!(p.parse().to_string(), "43.0");
+    fn parses_literal() {
+        let mut p = Parser::new(vec![Token::StringLiteral("43".to_string())]);
+        assert_eq!(p.parse().to_string(), "43");
     }
 }
