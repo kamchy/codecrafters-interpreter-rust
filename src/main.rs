@@ -3,6 +3,7 @@ use std::fs;
 use std::io::{self, Write};
 use std::process::ExitCode;
 mod lexer;
+mod parser;
 mod token;
 fn main() -> ExitCode {
     let args: Vec<String> = env::args().collect();
@@ -15,29 +16,28 @@ fn main() -> ExitCode {
     let filename = &args[2];
 
     match command.as_str() {
-        "tokenize" => {
-            let file_contents = fs::read_to_string(filename).unwrap_or_else(|_| {
-                eprintln!("Failed to read file {}", filename);
-                String::new()
-            });
-            tokenize(&file_contents)
-        }
+        "tokenize" => tokenize(&contents(&filename)),
+        "parse" => parse(&contents(&filename)),
         _ => {
             writeln!(io::stderr(), "Unknown command: {}", command).unwrap();
             return ExitCode::FAILURE;
         }
     }
 }
-
+fn contents(filename: &str) -> String {
+    fs::read_to_string(filename).unwrap_or_else(|_| {
+        eprintln!("Failed to read file {}", filename);
+        String::new()
+    })
+}
 pub(crate) fn tokenize_string(s: &str) -> Vec<token::Token> {
     let lexer = lexer::Lexer::new(s);
     lexer.into_iter().collect()
 }
 
 fn tokenize(s: &str) -> ExitCode {
-    let lexer = lexer::Lexer::new(s);
     let mut exit_code = ExitCode::SUCCESS;
-    for token in lexer {
+    for token in tokenize_string(s) {
         match token {
             token::Token::Unknown(_, _) => {
                 eprintln!("{}", token);
@@ -48,6 +48,14 @@ fn tokenize(s: &str) -> ExitCode {
     }
     exit_code
 }
+
+fn parse(s: &str) -> ExitCode {
+    let tokens = tokenize_string(s);
+    let mut parser = parser::Parser::new(tokens);
+    println!("{}", parser.parse());
+    ExitCode::SUCCESS
+}
+
 #[cfg(test)]
 mod tests {
     use super::token::*;
@@ -264,6 +272,5 @@ EOF  null"#;
     #[test]
     fn reserved() {
         compare("for fun", "FOR for null\nFUN fun null\nEOF  null");
-        todo!();
     }
 }
