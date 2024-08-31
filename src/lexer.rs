@@ -3,11 +3,13 @@ use crate::token::Numeric;
 use crate::token::Token;
 use std::{iter::Peekable, str::Chars};
 pub type LineNum = u64;
+
 pub(crate) struct Lexer<'a> {
     iter: Peekable<Chars<'a>>,
     at_end: bool,
     line: LineNum,
 }
+
 impl<'a> Lexer<'a> {
     pub(crate) fn new(s: &'a str) -> Self {
         Lexer {
@@ -37,6 +39,7 @@ impl<'a> Lexer<'a> {
             },
         }
     }
+
     fn match_next(&mut self, c: char, matching: Token, other: Token) -> Option<Token> {
         let p = &mut self.iter;
 
@@ -100,7 +103,29 @@ impl<'a> Lexer<'a> {
             curr = p.peek();
         }
     }
-
+    /// Returns Some(c) where c is a token representing a reserved word
+    /// or None if s is not a reserved word
+    fn reserved_from_str(&self, s: &str) -> Option<Token> {
+        match s {
+            "and" => Some(Token::And),
+            "class" => Some(Token::Class),
+            "else" => Some(Token::Else),
+            "false" => Some(Token::False),
+            "for" => Some(Token::For),
+            "fun" => Some(Token::Fun),
+            "if" => Some(Token::If),
+            "nil" => Some(Token::Nil),
+            "or" => Some(Token::Or),
+            "print" => Some(Token::Print),
+            "return" => Some(Token::Return),
+            "super" => Some(Token::Super),
+            "this" => Some(Token::This),
+            "true" => Some(Token::True),
+            "var" => Some(Token::Var),
+            "while" => Some(Token::While),
+            _ => None,
+        }
+    }
     fn parse_ident(&mut self, first: char) -> Option<Token> {
         let mut val_str = String::from(first);
         let p = &mut self.iter;
@@ -108,7 +133,14 @@ impl<'a> Lexer<'a> {
         loop {
             match curr {
                 Some(c) if c.is_ascii_alphanumeric() || *c == '_' => val_str.push(*c),
-                _ => break Some(Token::Identifier(val_str)),
+                _ => {
+                    let reserved_or_ident = if let Some(t) = self.reserved_from_str(&val_str) {
+                        t
+                    } else {
+                        Token::Identifier(val_str)
+                    };
+                    break Some(reserved_or_ident);
+                }
             }
             p.next();
             curr = p.peek();

@@ -260,4 +260,10 @@ EOF  null"#;
             "IDENTIFIER bar null\n[line 1] Error: Unterminated string.\nEOF  null",
         );
     }
+
+    #[test]
+    fn reserved() {
+        compare("for fun", "FOR for null\nFUN fun null\nEOF  null");
+        todo!();
+    }
 }
