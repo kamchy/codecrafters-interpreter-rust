@@ -50,12 +50,22 @@ fn tokenize(s: &str) -> ExitCode {
     }
     exit_code
 }
-
-fn parse(s: &str) -> ExitCode {
+fn parse_with_code(s: &str) -> u8 {
     let tokens: Vec<Token> = tokenize_string(s);
+    let mut exit_code = 0;
     let mut parser = parser::Parser::new(tokens);
-    println!("{}", parser.parse());
-    ExitCode::SUCCESS
+    let expr = parser.parse();
+    match expr {
+        parser::Expression::Invalid(d) => {
+            eprint!("{}", d);
+            exit_code = 65;
+        }
+        valid => println!("{}", valid),
+    }
+    exit_code
+}
+fn parse(s: &str) -> ExitCode {
+    ExitCode::from(parse_with_code(s))
 }
 
 #[cfg(test)]
@@ -209,6 +219,16 @@ mod tests_main {
         if let Some(v) = tokenize_string("65.1234").first() {
             assert_eq!(v.to_string(), "NUMBER 65.1234 65.1234");
         }
+    }
+
+    #[test]
+    fn parse_with_exit_0() {
+        assert_eq!(parse_with_code("(true)"), 0)
+    }
+
+    #[test]
+    fn parse_with_exit_65() {
+        assert_eq!(parse_with_code("(true"), 65)
     }
 
     fn compare(text: &str, result: &str) {
