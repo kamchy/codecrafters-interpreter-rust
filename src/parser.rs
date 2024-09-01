@@ -1,6 +1,10 @@
 use crate::token;
 use core::fmt::Display;
-use token::Token;
+use token::{Token, TokenType};
+
+/// Parser for lox.
+/// Initialized with a vector of tokens.
+/// Has curr - index of not yer consumed token  in tokens vec.
 pub(crate) struct Parser {
     tokens: Vec<Token>,
     curr: usize,
@@ -33,8 +37,8 @@ impl Parser {
         let mut expr = self.comparison();
         loop {
             let curr_token = self.current();
-            match curr_token {
-                Token::BangEqual | Token::EqualEqual => {
+            match curr_token.typ {
+                TokenType::BangEqual | TokenType::EqualEqual => {
                     self.advance();
                     expr = Expression::BinaryEx(
                         Box::new(expr),
@@ -53,8 +57,11 @@ impl Parser {
         let mut expr = self.term();
         loop {
             let curr_token = self.current();
-            match curr_token {
-                Token::Greater | Token::GreaterEqual | Token::Less | Token::LessEqual => {
+            match curr_token.typ {
+                TokenType::Greater
+                | TokenType::GreaterEqual
+                | TokenType::Less
+                | TokenType::LessEqual => {
                     self.advance();
                     expr = Expression::BinaryEx(
                         Box::new(expr),
@@ -72,8 +79,8 @@ impl Parser {
         let mut factor = self.factor();
         loop {
             let curr_token = self.current();
-            match curr_token {
-                Token::Minus | Token::Plus => {
+            match curr_token.typ {
+                TokenType::Minus | TokenType::Plus => {
                     self.advance();
                     factor = Expression::BinaryEx(
                         Box::new(factor),
@@ -91,8 +98,8 @@ impl Parser {
         let mut expr = self.unary();
         loop {
             let curr_token = self.current();
-            match curr_token {
-                Token::Slash | Token::Star => {
+            match curr_token.typ {
+                TokenType::Slash | TokenType::Star => {
                     self.advance();
                     expr = Expression::BinaryEx(
                         Box::new(expr),
@@ -108,8 +115,8 @@ impl Parser {
 
     fn unary(&mut self) -> Expression {
         let curr_token = self.current();
-        let expr = match curr_token {
-            Token::Bang | Token::Minus => {
+        let expr = match curr_token.typ {
+            TokenType::Bang | TokenType::Minus => {
                 self.advance();
                 Expression::UnaryEx(Unary::new(&curr_token), Box::new(self.unary()))
             }
@@ -120,24 +127,24 @@ impl Parser {
 
     fn primary(&mut self) -> Expression {
         let curr = self.current();
-        let prim = match curr {
-            Token::Number(_, _)
-            | Token::StringLiteral(_)
-            | Token::True
-            | Token::False
-            | Token::Nil => Expression::Primary(curr),
-            Token::LeftParen => {
+        let prim = match curr.typ {
+            TokenType::Number(_)
+            | TokenType::StringLiteral
+            | TokenType::True
+            | TokenType::False
+            | TokenType::Nil => Expression::Primary(curr),
+            TokenType::LeftParen => {
                 self.advance();
                 let e = self.expression();
-                match self.current() {
-                    Token::RightParen => Expression::Paren(Box::new(e)),
-                    other => Expression::Invalid(
-                        format!("Expected right paren, found {}", other).to_owned(),
+                match self.current().typ {
+                    TokenType::RightParen => Expression::Paren(Box::new(e)),
+                    _other => Expression::Invalid(
+                        format!("[line {} Error at {}: Expected right paren", curr.ln, curr.s).to_owned(),
                     ),
                 }
             }
-            _ => Expression::Invalid(
-                "Expected primary (number,  string, bool, nil)  or left paren".into(),
+            _other => Expression::Invalid(
+                format!("[line {}] Error at {}: Expected primary (number,  string, bool, nil)  or left paren", curr.ln, curr.s),
             ),
         };
         self.advance();
@@ -181,17 +188,17 @@ impl Display for Binary {
 }
 impl Binary {
     fn new(t: &Token) -> Self {
-        match t {
-            Token::Plus => Binary::Plus,
-            Token::Minus => Binary::Minus,
-            Token::Slash => Binary::Divide,
-            Token::Star => Binary::Multiply,
-            Token::Less => Binary::Less,
-            Token::Greater => Binary::Greater,
-            Token::LessEqual => Binary::LessEqual,
-            Token::GreaterEqual => Binary::GreaterEqual,
-            Token::EqualEqual => Binary::EqualEqual,
-            Token::BangEqual => Binary::NotEqual,
+        match t.typ {
+            TokenType::Plus => Binary::Plus,
+            TokenType::Minus => Binary::Minus,
+            TokenType::Slash => Binary::Divide,
+            TokenType::Star => Binary::Multiply,
+            TokenType::Less => Binary::Less,
+            TokenType::Greater => Binary::Greater,
+            TokenType::LessEqual => Binary::LessEqual,
+            TokenType::GreaterEqual => Binary::GreaterEqual,
+            TokenType::EqualEqual => Binary::EqualEqual,
+            TokenType::BangEqual => Binary::NotEqual,
             _ => Binary::InvalidBinary(t.clone()),
         }
     }
@@ -217,9 +224,9 @@ impl Display for Unary {
 
 impl Unary {
     fn new(t: &Token) -> Self {
-        match t {
-            Token::Minus => Unary::Minus,
-            Token::Bang => Unary::Not,
+        match t.typ {
+            TokenType::Minus => Unary::Minus,
+            TokenType::Bang => Unary::Not,
             _ => Unary::Invalid(t.clone()),
         }
     }
@@ -237,12 +244,12 @@ pub(crate) enum Expression {
 impl Display for Expression {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::Primary(t) => match t {
-                Token::True => f.write_str("true"),
-                Token::False => f.write_str("false"),
-                Token::Nil => f.write_str("nil"),
-                Token::Number(_, v) => f.write_str(&v.to_string()),
-                Token::StringLiteral(s) => f.write_str(s),
+            Self::Primary(t) => match &t.typ {
+                TokenType::True => f.write_str("true"),
+                TokenType::False => f.write_str("false"),
+                TokenType::Nil => f.write_str("nil"),
+                TokenType::Number(v) => f.write_str(&v.to_string()),
+                TokenType::StringLiteral => f.write_str(&t.s), //?
                 other => f.write_str(&other.to_string()),
             },
             Self::BinaryEx(l, o, r) => f.write_fmt(format_args!("({} {} {})", o, l, r)),
@@ -258,12 +265,21 @@ mod tests {
     use super::*;
     use crate::{
         lexer,
-        token::{Numeric, Token},
+        token::{Numeric, TokenType},
     };
 
+    impl Parser {
+        fn new_from_tokentype_vec(v: Vec<TokenType>) -> Parser {
+            Parser::new(
+                v.into_iter()
+                    .map(|tt| Token::new(tt, 0, "".into()))
+                    .collect(),
+            )
+        }
+    }
     #[test]
     fn parses_true() {
-        let mut p = Parser::new(vec![Token::True, Token::Eof]);
+        let mut p = Parser::new_from_tokentype_vec(vec![TokenType::True, TokenType::Eof]);
         assert_eq!(p.parse().to_string(), "true");
     }
 
@@ -274,7 +290,7 @@ mod tests {
 
     #[test]
     fn parses_false() {
-        let mut p = Parser::new(vec![Token::False]);
+        let mut p = Parser::new_from_tokentype_vec(vec![TokenType::False]);
         assert_eq!(p.parse().to_string(), "false");
     }
 
@@ -285,7 +301,7 @@ mod tests {
 
     #[test]
     fn parses_nil() {
-        let mut p = Parser::new(vec![Token::Nil]);
+        let mut p = Parser::new_from_tokentype_vec(vec![TokenType::Nil]);
         assert_eq!(p.parse().to_string(), "nil");
     }
 
@@ -296,7 +312,7 @@ mod tests {
 
     #[test]
     fn parses_numeric() {
-        let mut p = Parser::new(vec![Token::Number("43.47".to_string(), Numeric(43.47f64))]);
+        let mut p = Parser::new_from_tokentype_vec(vec![TokenType::Number(Numeric(43.47f64))]);
         assert_eq!(p.parse().to_string(), "43.47");
     }
 
@@ -311,25 +327,8 @@ mod tests {
     }
 
     #[test]
-    fn parses_literal() {
-        let mut p = Parser::new(vec![Token::StringLiteral("foo".to_string())]);
-        assert_eq!(p.parse().to_string(), "foo");
-    }
-
-    #[test]
     fn parses_literal_2() {
         assert_parsed_text_result("\"foo\"", "foo");
-    }
-
-    #[test]
-    fn parses_paren_string() {
-        let mut p = Parser::new(vec![
-            Token::LeftParen,
-            Token::StringLiteral("foo".to_string()),
-            Token::RightParen,
-            Token::Eof,
-        ]);
-        assert_eq!(p.parse().to_string(), "(group foo)");
     }
 
     #[test]
@@ -339,7 +338,7 @@ mod tests {
 
     #[test]
     fn parses_unary_not_true() {
-        let mut p = Parser::new(vec![Token::Bang, Token::True]);
+        let mut p = Parser::new_from_tokentype_vec(vec![TokenType::Bang, TokenType::True]);
         assert_eq!(p.parse().to_string(), "(! true)");
     }
 
@@ -355,9 +354,9 @@ mod tests {
 
     #[test]
     fn parses_unary_minus() {
-        let mut p = Parser::new(vec![
-            Token::Minus,
-            Token::Number("10".to_string(), Numeric(10.0f64)),
+        let mut p = Parser::new_from_tokentype_vec(vec![
+            TokenType::Minus,
+            TokenType::Number(Numeric(10.0f64)),
         ]);
         assert_eq!(p.parse().to_string(), "(- 10.0)");
     }
