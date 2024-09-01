@@ -5,6 +5,8 @@ use std::process::ExitCode;
 mod lexer;
 mod parser;
 mod token;
+use token::{Token, TokenType};
+
 fn main() -> ExitCode {
     let args: Vec<String> = env::args().collect();
     if args.len() < 3 {
@@ -38,8 +40,8 @@ pub(crate) fn tokenize_string(s: &str) -> Vec<token::Token> {
 fn tokenize(s: &str) -> ExitCode {
     let mut exit_code = ExitCode::SUCCESS;
     for token in tokenize_string(s) {
-        match token {
-            token::Token::Unknown(_, _) => {
+        match token.typ {
+            token::TokenType::Unknown(_) => {
                 eprintln!("{}", token);
                 exit_code = ExitCode::from(65);
             }
@@ -50,144 +52,148 @@ fn tokenize(s: &str) -> ExitCode {
 }
 
 fn parse(s: &str) -> ExitCode {
-    let tokens = tokenize_string(s);
+    let tokens: Vec<Token> = tokenize_string(s);
     let mut parser = parser::Parser::new(tokens);
     println!("{}", parser.parse());
     ExitCode::SUCCESS
 }
 
 #[cfg(test)]
-mod tests {
+mod tests_main {
+
     use super::token::*;
     use super::*;
+
+    fn assert_token_vec_lexing_result(s: &str, expected: Vec<TokenType>) {
+        assert_eq!(
+            tokenize_string(&s)
+                .iter()
+                .map(|t| t.typ.clone())
+                .collect::<Vec<_>>(),
+            expected
+        );
+    }
     #[test]
     fn it_works() {
-        assert_eq!(tokenize_string("("), vec![Token::LeftParen, Token::Eof]);
+        assert_token_vec_lexing_result("(", vec![TokenType::LeftParen, TokenType::Eof]);
     }
 
     #[test]
     fn number12() {
-        assert_eq!(
-            tokenize_string("12"),
-            vec![
-                Token::Number("12".to_string(), Numeric(12.0f64)),
-                Token::Eof
-            ]
-        )
+        assert_token_vec_lexing_result(
+            "12",
+            vec![TokenType::Number(Numeric(12.0f64)), TokenType::Eof],
+        );
     }
 
     #[test]
     fn number1() {
-        assert_eq!(
-            tokenize_string("1"),
-            vec![Token::Number("1".to_string(), Numeric(1.0)), Token::Eof]
-        )
+        assert_token_vec_lexing_result("1", vec![TokenType::Number(Numeric(1.0)), TokenType::Eof]);
+        let ts = tokenize_string("1");
+        assert_eq!(ts.first().unwrap().typ.to_string(), "1.0");
     }
 
     #[test]
     fn number_12_5() {
-        assert_eq!(
-            tokenize_string("12.5"),
-            vec![
-                Token::Number("12.5".to_string(), Numeric(12.5f64)),
-                Token::Eof
-            ]
-        )
+        assert_token_vec_lexing_result(
+            "12.5",
+            vec![TokenType::Number(Numeric(12.5f64)), TokenType::Eof],
+        );
     }
     #[test]
     fn number_12_5_3() {
-        assert_eq!(
-            tokenize_string("12.5 3"),
+        assert_token_vec_lexing_result(
+            "12.5 3",
             vec![
-                Token::Number("12.5".to_string(), Numeric(12.5f64)),
-                Token::Number("3".to_string(), Numeric(3f64)),
-                Token::Eof
-            ]
+                TokenType::Number(Numeric(12.5f64)),
+                TokenType::Number(Numeric(3f64)),
+                TokenType::Eof,
+            ],
         )
     }
 
     #[test]
     fn number_12_str() {
-        assert_eq!(
-            tokenize_string("12.5 \"abc\""),
+        assert_token_vec_lexing_result(
+            "12.5 \"abc\"",
             vec![
-                Token::Number("12.5".to_string(), Numeric(12.5f64)),
-                Token::StringLiteral("abc".to_string()),
-                Token::Eof
-            ]
+                TokenType::Number(Numeric(12.5f64)),
+                TokenType::StringLiteral,
+                TokenType::Eof,
+            ],
         )
     }
     #[test]
     fn number_12_eol_str() {
-        assert_eq!(
-            tokenize_string("12.5\n\"abc\""),
+        assert_token_vec_lexing_result(
+            "12.5\n\"abc\"",
             vec![
-                Token::Number("12.5".to_string(), Numeric(12.5f64)),
-                Token::StringLiteral("abc".to_string()),
-                Token::Eof
-            ]
+                TokenType::Number(Numeric(12.5f64)),
+                TokenType::StringLiteral,
+                TokenType::Eof,
+            ],
         )
     }
 
     #[test]
     fn number_12_tab_str() {
-        assert_eq!(
-            tokenize_string("12.5\t\"abc\""),
+        assert_token_vec_lexing_result(
+            "12.5\t\"abc\"",
             vec![
-                Token::Number("12.5".to_string(), Numeric(12.5f64)),
-                Token::StringLiteral("abc".to_string()),
-                Token::Eof
-            ]
+                TokenType::Number(Numeric(12.5f64)),
+                TokenType::StringLiteral,
+                TokenType::Eof,
+            ],
         )
     }
 
     #[test]
     fn invalid_token() {
-        assert_eq!(
-            tokenize_string("%"),
+        assert_token_vec_lexing_result(
+            "%",
             vec![
-                Token::Unknown(1, LexicalError::UnknownToken('%')),
-                Token::Eof
-            ]
+                TokenType::Unknown(LexicalError::UnknownToken('%')),
+                TokenType::Eof,
+            ],
         )
     }
     #[test]
     fn invalid_second_line() {
-        assert_eq!(
-            tokenize_string("12.5\n%"),
+        assert_token_vec_lexing_result(
+            "12.5\n%",
             vec![
-                Token::Number("12.5".to_string(), Numeric(12.5f64)),
-                Token::Unknown(2, LexicalError::UnknownToken('%')),
-                Token::Eof
-            ]
+                TokenType::Number(Numeric(12.5f64)),
+                TokenType::Unknown(LexicalError::UnknownToken('%')),
+                TokenType::Eof,
+            ],
         )
     }
 
     #[test]
     fn invalid_2_and_4_line() {
-        assert_eq!(
-            tokenize_string("12.5\n%\n23\n6.34f #"),
+        assert_token_vec_lexing_result(
+            "12.5\n%\n23\n6.34f #",
             vec![
-                Token::Number("12.5".to_string(), Numeric(12.5f64)),
-                Token::Unknown(2, LexicalError::UnknownToken('%')),
-                Token::Number("23".to_string(), Numeric(23f64)),
-                Token::Number("6.34".to_string(), Numeric(6.34f64)),
-                Token::Identifier("f".to_string()),
-                Token::Unknown(4, LexicalError::UnknownToken('#')),
-                Token::Eof
-            ]
+                TokenType::Number(Numeric(12.5f64)),
+                TokenType::Unknown(LexicalError::UnknownToken('%')),
+                TokenType::Number(Numeric(23f64)),
+                TokenType::Number(Numeric(6.34f64)),
+                TokenType::Identifier,
+                TokenType::Unknown(LexicalError::UnknownToken('#')),
+                TokenType::Eof,
+            ],
         )
     }
 
     #[test]
     fn invalid() {
-        assert_eq!(
-            tokenize_string("12.5a"),
+        assert_token_vec_lexing_result(
+            "12.5a",
             vec![
-                Token::Number("12.5".to_string(), Numeric(12.5f64)),
-                Token::Identifier("a".to_string()),
-                Token::Eof
-            ]
+                TokenType::Number(Numeric(12.5f64)),
+                TokenType::Identifier,
+                TokenType::Eof,
+            ],
         )
     }
 
