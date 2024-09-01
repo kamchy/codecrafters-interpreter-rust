@@ -44,7 +44,6 @@ impl Parser {
                 }
                 _ => break,
             }
-            self.advance();
         }
 
         expr
@@ -152,7 +151,11 @@ pub(crate) enum Binary {
     Minus,
     Divide,
     Multiply,
-    Invalid(Token),
+    Less,
+    LessEqual,
+    Greater,
+    GreaterEqual,
+    InvalidBinary(Token),
 }
 
 impl Display for Binary {
@@ -162,7 +165,11 @@ impl Display for Binary {
             Binary::Minus => "-".to_owned(),
             Binary::Divide => "/".to_owned(),
             Binary::Multiply => "*".to_owned(),
-            Binary::Invalid(t) => format!("[invalid binary operator: {}]", t),
+            Binary::Greater => ">".to_owned(),
+            Binary::Less => "<".to_owned(),
+            Binary::GreaterEqual => ">=".to_owned(),
+            Binary::LessEqual => "<=".to_owned(),
+            Binary::InvalidBinary(t) => format!("[invalid binary operator: {}]", t),
         };
 
         f.write_fmt(format_args!("{}", val))
@@ -175,7 +182,11 @@ impl Binary {
             Token::Minus => Binary::Minus,
             Token::Slash => Binary::Divide,
             Token::Star => Binary::Multiply,
-            _ => Binary::Invalid(t.clone()),
+            Token::Less => Binary::Less,
+            Token::Greater => Binary::Greater,
+            Token::LessEqual => Binary::LessEqual,
+            Token::GreaterEqual => Binary::GreaterEqual,
+            _ => Binary::InvalidBinary(t.clone()),
         }
     }
 }
@@ -378,5 +389,10 @@ mod tests {
     #[test]
     fn parses_binary_plus() {
         assert_parsed_text_result("16 + 38 * 58", "(+ 16.0 (* 38.0 58.0))")
+    }
+
+    #[test]
+    fn parses_comparison_operator() {
+        assert_parsed_text_result("83 < 99 < 115", "(< (< 83.0 99.0) 115.0)")
     }
 }
