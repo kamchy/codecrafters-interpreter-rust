@@ -155,6 +155,7 @@ pub(crate) enum Binary {
     LessEqual,
     Greater,
     GreaterEqual,
+    EqualEqual,
     InvalidBinary(Token),
 }
 
@@ -169,6 +170,7 @@ impl Display for Binary {
             Binary::Less => "<".to_owned(),
             Binary::GreaterEqual => ">=".to_owned(),
             Binary::LessEqual => "<=".to_owned(),
+            Binary::EqualEqual => "==".to_owned(),
             Binary::InvalidBinary(t) => format!("[invalid binary operator: {}]", t),
         };
 
@@ -186,6 +188,7 @@ impl Binary {
             Token::Greater => Binary::Greater,
             Token::LessEqual => Binary::LessEqual,
             Token::GreaterEqual => Binary::GreaterEqual,
+            Token::EqualEqual => Binary::EqualEqual,
             _ => Binary::InvalidBinary(t.clone()),
         }
     }
@@ -394,5 +397,18 @@ mod tests {
     #[test]
     fn parses_comparison_operator() {
         assert_parsed_text_result("83 < 99 < 115", "(< (< 83.0 99.0) 115.0)")
+    }
+
+    #[test]
+    fn parses_equality_operator() {
+        assert_parsed_text_result("\"baz\" == \"baz\"", "(== baz baz)")
+    }
+
+    #[test]
+    fn parses_equality_operator2() {
+        assert_parsed_text_result(
+            "! (\"baz\" == \"baz\") > 5",
+            "(> (! (group (== baz baz))) 5.0)",
+        )
     }
 }
