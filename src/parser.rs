@@ -65,29 +65,27 @@ impl Parser {
                 }
                 _ => break,
             }
-            self.advance();
         }
         expr
     }
 
     fn term(&mut self) -> crate::parser::Expression {
-        let mut expr = self.factor();
+        let mut factor = self.factor();
         loop {
             let curr_token = self.current();
             match curr_token {
                 Token::Minus | Token::Plus => {
                     self.advance();
-                    expr = Expression::BinaryEx(
-                        Box::new(expr),
+                    factor = Expression::BinaryEx(
+                        Box::new(factor),
                         Binary::new(&curr_token),
                         Box::new(self.factor()),
                     );
                 }
                 _ => break,
             }
-            self.advance();
         }
-        expr
+        factor
     }
 
     fn factor(&mut self) -> Expression {
@@ -105,7 +103,6 @@ impl Parser {
                 }
                 _ => break,
             }
-            self.advance();
         }
         expr
     }
@@ -371,5 +368,15 @@ mod tests {
     #[test]
     fn parses_unary_multiple() {
         assert_parsed_text_result("(!!(true))", "(group (! (! (group true))))")
+    }
+
+    #[test]
+    fn parses_binary() {
+        assert_parsed_text_result("16 * 38 / 58", "(/ (* 16.0 38.0) 58.0)")
+    }
+
+    #[test]
+    fn parses_binary_plus() {
+        assert_parsed_text_result("16 + 38 * 58", "(+ 16.0 (* 38.0 58.0))")
     }
 }
