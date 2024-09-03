@@ -147,6 +147,14 @@ impl Token {
             s: c.to_string(),
         }
     }
+    pub fn of_bool(b: bool, ln: LineNum) -> Token {
+        let tt = if b { TokenType::True } else { TokenType::False };
+        Token {
+            typ: tt.clone(),
+            ln,
+            s: tt.to_string(),
+        }
+    }
 }
 impl Display for Token {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

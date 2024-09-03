@@ -2,6 +2,7 @@ use std::env;
 use std::fs;
 use std::io::{self, Write};
 use std::process::ExitCode;
+mod evaluator;
 mod lexer;
 mod parser;
 mod token;
@@ -20,6 +21,7 @@ fn main() -> ExitCode {
     match command.as_str() {
         "tokenize" => tokenize(&contents(&filename)),
         "parse" => parse(&contents(&filename)),
+        "evaluate" => evaluate(&contents(&filename)),
         _ => {
             writeln!(io::stderr(), "Unknown command: {}", command).unwrap();
             return ExitCode::FAILURE;
@@ -50,22 +52,39 @@ fn tokenize(s: &str) -> ExitCode {
     }
     exit_code
 }
-fn parse_with_code(s: &str) -> u8 {
+
+fn parse_with_code(s: &str) -> (parser::Expression, u8) {
     let tokens: Vec<Token> = tokenize_string(s);
     let mut exit_code = 0;
     let mut parser = parser::Parser::new(tokens);
     let expr = parser.parse();
     match expr {
-        parser::Expression::Invalid(d) => {
+        parser::Expression::Invalid(ref d) => {
             eprint!("{}", d);
             exit_code = 65;
         }
-        valid => println!("{}", valid),
+        ref valid => println!("{}", valid),
     }
-    exit_code
+    (expr, exit_code)
 }
+
 fn parse(s: &str) -> ExitCode {
-    ExitCode::from(parse_with_code(s))
+    let (_, code) = parse_with_code(s);
+    ExitCode::from(code)
+}
+
+fn evaluate_with_code(s: &str) -> u8 {
+    let (expr, code) = parse_with_code(s);
+    let ev = evaluator::Evaluator {};
+    match ev.eval(expr) {
+        Ok(res) => println!("{}", res),
+        Err(e) => eprint!("{}", e),
+    }
+    code
+}
+
+fn evaluate(s: &str) -> ExitCode {
+    ExitCode::from(evaluate_with_code(s))
 }
 
 #[cfg(test)]
@@ -223,12 +242,14 @@ mod tests_main {
 
     #[test]
     fn parse_with_exit_0() {
-        assert_eq!(parse_with_code("(true)"), 0)
+        let (_, code) = parse_with_code("(true)");
+        assert_eq!(code, 0)
     }
 
     #[test]
     fn parse_with_exit_65() {
-        assert_eq!(parse_with_code("(true"), 65)
+        let (_, code) = parse_with_code("(true");
+        assert_eq!(code, 65)
     }
 
     fn compare(text: &str, result: &str) {
