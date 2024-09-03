@@ -16,6 +16,7 @@ pub enum EvalResult {
     Numeric(f64),
     Boolean(bool),
     String(String),
+    Reserved(String),
 }
 impl Display for EvalResult {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -23,6 +24,7 @@ impl Display for EvalResult {
             Self::Numeric(v) => v.to_string(),
             Self::Boolean(b) => b.to_string(),
             Self::String(s) => s.to_string(),
+            Self::Reserved(s) => s.to_string(),
         };
         f.write_str(&s)
     }
@@ -68,6 +70,7 @@ impl Evaluator {
         match t.typ {
             TokenType::True => Ok(EvalResult::Boolean(true)),
             TokenType::False => Ok(EvalResult::Boolean(false)),
+            TokenType::Nil => Ok(EvalResult::Reserved("nil".to_string())),
             _ => Err(EvalError::new("unimplemented!".into())),
         }
     }
@@ -127,6 +130,14 @@ mod test_evaluator {
         simple_eval_value(false);
     }
 
+    #[test]
+    fn eval_nil() {
+        let expr = crate::parser::Expression::Primary(Token::nil(1));
+        let e = Evaluator::new();
+        if let Ok(res) = e.eval(expr) {
+            assert_eq!(res, EvalResult::Reserved("nil".to_owned()))
+        }
+    }
     fn simple_eval_value(b: bool) {
         let expr = crate::parser::Expression::Primary(Token::of_bool(b, 1));
         let e = Evaluator::new();

@@ -140,19 +140,27 @@ impl Token {
     pub fn new(typ: TokenType, ln: LineNum, s: String) -> Token {
         Token { typ, ln, s }
     }
-    pub fn of_char(typ: TokenType, ln: LineNum, c: char) -> Token {
+    pub(crate) fn of_char(typ: TokenType, ln: LineNum, c: char) -> Token {
         Token {
             typ,
             ln,
             s: c.to_string(),
         }
     }
-    pub fn of_bool(b: bool, ln: LineNum) -> Token {
+    pub(crate) fn of_bool(b: bool, ln: LineNum) -> Token {
         let tt = if b { TokenType::True } else { TokenType::False };
         Token {
             typ: tt.clone(),
             ln,
             s: tt.to_string(),
+        }
+    }
+
+    pub(crate) fn nil(ln: LineNum) -> Token {
+        Token {
+            typ: TokenType::Nil,
+            ln,
+            s: "nil".to_string(),
         }
     }
 }
