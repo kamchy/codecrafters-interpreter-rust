@@ -59,17 +59,21 @@ fn parse_with_code(s: &str) -> (parser::Expression, u8) {
     let mut parser = parser::Parser::new(tokens);
     let expr = parser.parse();
     match expr {
-        parser::Expression::Invalid(ref d) => {
-            eprint!("{}", d);
-            exit_code = 65;
-        }
-        ref valid => println!("{}", valid),
+        parser::Expression::Invalid(_) => exit_code = 65,
+        _ => (),
     }
     (expr, exit_code)
 }
 
 fn parse(s: &str) -> ExitCode {
-    let (_, code) = parse_with_code(s);
+    let (expr, code) = parse_with_code(s);
+
+    match expr {
+        parser::Expression::Invalid(ref d) => {
+            eprint!("{}", d);
+        }
+        ref valid => println!("{}", valid),
+    }
     ExitCode::from(code)
 }
 
