@@ -11,7 +11,6 @@ impl Display for LexicalError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::UnknownToken(c) => f.write_fmt(format_args!("Unexpected character: {}", c)),
-
             Self::UnterminatedString => f.write_str("Unterminated string."),
             Self::InvalidNumber => f.write_str("Invalid number."),
         }
@@ -83,44 +82,44 @@ pub(crate) enum TokenType {
 impl Display for TokenType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::LeftParen => f.write_str("LEFT_PAREN ( null"),
-            Self::RightParen => f.write_str("RIGHT_PAREN ) null"),
-            Self::LeftBrace => f.write_str("LEFT_BRACE { null"),
-            Self::RightBrace => f.write_str("RIGHT_BRACE } null"),
-            Self::Star => f.write_str("STAR * null"),
-            Self::Dot => f.write_str("DOT . null"),
+            Self::And => f.write_str("AND and null"),
+            Self::Bang => f.write_str("BANG ! null"),
+            Self::BangEqual => f.write_str("BANG_EQUAL != null"),
+            Self::Class => f.write_str("CLASS class null"),
             Self::Comma => f.write_str("COMMA , null"),
-            Self::Plus => f.write_str("PLUS + null"),
-            Self::Minus => f.write_str("MINUS - null"),
-            Self::Semicolon => f.write_str("SEMICOLON ; null"),
+            Self::Dot => f.write_str("DOT . null"),
+            Self::Else => f.write_str("ELSE else null"),
+            Self::Eof => f.write_str("EOF  null"),
             Self::Equal => f.write_str("EQUAL = null"),
             Self::EqualEqual => f.write_str("EQUAL_EQUAL == null"),
-            Self::BangEqual => f.write_str("BANG_EQUAL != null"),
-            Self::Bang => f.write_str("BANG ! null"),
-            Self::LessEqual => f.write_str("LESS_EQUAL <= null"),
-            Self::GreaterEqual => f.write_str("GREATER_EQUAL >= null"),
-            Self::Less => f.write_str("LESS < null"),
-            Self::Greater => f.write_str("GREATER > null"),
-            Self::Slash => f.write_str("SLASH / null"),
-            Self::StringLiteral => f.write_str("STRING"),
-            Self::Identifier => f.write_str("IDENTIFIER"),
-            Self::Number(v) => f.write_fmt(format_args!("{}", v)),
-            Self::Unknown(lex_err) => f.write_fmt(format_args!("{}", lex_err)),
-            Self::Eof => f.write_str("EOF  null"),
-            Self::And => f.write_str("AND and null"),
-            Self::Class => f.write_str("CLASS class null"),
-            Self::Else => f.write_str("ELSE else null"),
             Self::False => f.write_str("FALSE false null"),
             Self::For => f.write_str("FOR for null"),
             Self::Fun => f.write_str("FUN fun null"),
+            Self::Greater => f.write_str("GREATER > null"),
+            Self::GreaterEqual => f.write_str("GREATER_EQUAL >= null"),
+            Self::Identifier => f.write_str("IDENTIFIER"),
             Self::If => f.write_str("IF if null"),
+            Self::LeftBrace => f.write_str("LEFT_BRACE { null"),
+            Self::LeftParen => f.write_str("LEFT_PAREN ( null"),
+            Self::Less => f.write_str("LESS < null"),
+            Self::LessEqual => f.write_str("LESS_EQUAL <= null"),
+            Self::Minus => f.write_str("MINUS - null"),
             Self::Nil => f.write_str("NIL nil null"),
+            Self::Number(v) => f.write_fmt(format_args!("{}", v)),
             Self::Or => f.write_str("OR or null"),
+            Self::Plus => f.write_str("PLUS + null"),
             Self::Print => f.write_str("PRINT print null"),
             Self::Return => f.write_str("RETURN return null"),
+            Self::RightBrace => f.write_str("RIGHT_BRACE } null"),
+            Self::RightParen => f.write_str("RIGHT_PAREN ) null"),
+            Self::Semicolon => f.write_str("SEMICOLON ; null"),
+            Self::Slash => f.write_str("SLASH / null"),
+            Self::Star => f.write_str("STAR * null"),
+            Self::StringLiteral => f.write_str("STRING"),
             Self::Super => f.write_str("SUPER super null"),
             Self::This => f.write_str("THIS this null"),
             Self::True => f.write_str("TRUE true null"),
+            Self::Unknown(lex_err) => f.write_fmt(format_args!("{}", lex_err)),
             Self::Var => f.write_str("VAR var null"),
             Self::While => f.write_str("WHILE while null"),
         }
@@ -156,6 +155,21 @@ impl Token {
         }
     }
 
+    pub(crate) fn of_string(s: &str, ln: LineNum) -> Token {
+        Token {
+            typ: TokenType::StringLiteral,
+            ln,
+            s: s.to_string(),
+        }
+    }
+
+    pub(crate) fn of_numeric(n: Numeric, ln: LineNum) -> Token {
+        Token {
+            typ: TokenType::Number(n.clone()),
+            ln,
+            s: n.to_string(),
+        }
+    }
     pub(crate) fn nil(ln: LineNum) -> Token {
         Token {
             typ: TokenType::Nil,

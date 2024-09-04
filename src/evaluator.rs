@@ -6,7 +6,7 @@ use std::{
 
 use crate::{
     parser::{Binary, Expression, Unary},
-    token::{Token, TokenType},
+    token::{Numeric, Token, TokenType},
 };
 
 pub type Result = std::result::Result<EvalResult, EvalError>;
@@ -40,17 +40,7 @@ impl EvalError {
         EvalError { s }
     }
 }
-// impl From<&'static str> for EvalError {
-//     fn from(s: &'static str) -> EvalError {
-//         EvalError { s: s.to_string() }
-//     }
-// }
 
-// impl From<&str> for EvalError {
-//     fn from(s: &str) -> EvalError {
-//         EvalError { s: String::from(s) }
-//     }
-// }
 impl Error for EvalError {}
 impl Display for EvalError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -71,6 +61,8 @@ impl Evaluator {
             TokenType::True => Ok(EvalResult::Boolean(true)),
             TokenType::False => Ok(EvalResult::Boolean(false)),
             TokenType::Nil => Ok(EvalResult::Reserved("nil".to_string())),
+            TokenType::StringLiteral => Ok(EvalResult::String(t.s.clone())),
+            TokenType::Number(Numeric(f)) => Ok(EvalResult::Numeric(f)),
             _ => Err(EvalError::new("unimplemented!".into())),
         }
     }
@@ -116,7 +108,10 @@ impl Evaluator {
 
 #[cfg(test)]
 mod test_evaluator {
-    use crate::{evaluator::EvalResult, token::Token};
+    use crate::{
+        evaluator::EvalResult,
+        token::{Numeric, Token},
+    };
 
     use super::Evaluator;
 
@@ -138,6 +133,24 @@ mod test_evaluator {
             assert_eq!(res, EvalResult::Reserved("nil".to_owned()))
         }
     }
+    #[test]
+    fn eval_string() {
+        let expr = crate::parser::Expression::Primary(Token::of_string("hello", 1));
+        let e = Evaluator::new();
+        if let Ok(res) = e.eval(expr) {
+            assert_eq!(res, EvalResult::String("hello".to_string()))
+        }
+    }
+
+    #[test]
+    fn eval_number() {
+        let expr = crate::parser::Expression::Primary(Token::of_numeric(Numeric(12f64), 1));
+        let e = Evaluator::new();
+        if let Ok(res) = e.eval(expr) {
+            assert_eq!(res, EvalResult::Numeric(12f64))
+        }
+    }
+
     fn simple_eval_value(b: bool) {
         let expr = crate::parser::Expression::Primary(Token::of_bool(b, 1));
         let e = Evaluator::new();
