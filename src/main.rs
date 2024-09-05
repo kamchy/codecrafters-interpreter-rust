@@ -6,6 +6,8 @@ mod evaluator;
 mod lexer;
 mod parser;
 mod token;
+use evaluator::EvalError;
+use evaluator::EvalResult;
 use token::{Token, TokenType};
 
 fn main() -> ExitCode {
@@ -77,22 +79,26 @@ fn parse(s: &str) -> ExitCode {
     ExitCode::from(code)
 }
 
-fn evaluate_with_code(s: &str) -> u8 {
+fn evaluate_with_code(s: &str) -> (Result<EvalResult, EvalError>, u8) {
     let (expr, code) = parse_with_code(s);
     let ev = evaluator::Evaluator {};
-    match ev.eval(expr) {
-        Ok(res) => println!("{}", res),
-        Err(e) => eprint!("{}", e),
-    }
-    code
+    let result = ev.eval(expr);
+    (result, code)
 }
 
 fn evaluate(s: &str) -> ExitCode {
-    ExitCode::from(evaluate_with_code(s))
+    let (result, code) = evaluate_with_code(s);
+    match result {
+        Ok(res) => println!("{}", res),
+        Err(e) => eprint!("{}", e),
+    }
+    ExitCode::from(code)
 }
 
 #[cfg(test)]
 mod tests_main {
+
+    use core::panic;
 
     use super::token::*;
     use super::*;
@@ -323,5 +329,46 @@ EOF  null"#;
     #[test]
     fn reserved() {
         compare("for fun", "FOR for null\nFUN fun null\nEOF  null");
+    }
+
+    #[derive(Debug)]
+    struct Case<'a> {
+        inp: &'a str,
+        outp: &'a str,
+    }
+
+    #[test]
+    fn evaluate_cases() {
+        let cases: Vec<Case> = vec![
+            Case {
+                inp: "-73",
+                outp: "-73",
+            },
+            Case {
+                inp: "!true",
+                outp: "false",
+            },
+            Case {
+                inp: "!10.40",
+                outp: "false",
+            },
+            Case {
+                inp: "!((false))",
+                outp: "true",
+            },
+        ];
+        for c in cases {
+            let (r, _) = evaluate_with_code(c.inp);
+            match r {
+                Ok(eres) => assert_eq!(
+                    c.outp,
+                    eres.to_string(),
+                    "Testing case {:?} got {}",
+                    c,
+                    eres
+                ),
+                Err(error) => panic!("case: {:?}, error: {}", c, error),
+            }
+        }
     }
 }
