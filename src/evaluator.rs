@@ -48,6 +48,11 @@ impl Display for EvalError {
     }
 }
 
+/// Creates Err variant from statuc string
+fn err(s: &'static str) -> Result {
+    Err(EvalError { s: s.into() })
+}
+
 /// Evaluator of expressions
 pub struct Evaluator {}
 
@@ -74,9 +79,14 @@ impl Evaluator {
                 EvalResult::Numeric(n) => match unary {
                     Unary::Minus => Ok(EvalResult::Numeric(-n)),
                     Unary::Not => Ok(EvalResult::Boolean(n == 0.0)),
-                    _ => Err(EvalError {
-                        s: "Numeric arg can only be used with <minus> operator".into(),
-                    }),
+                    _ => err("Numeric arg can only be used with <minus> operator"),
+                },
+                EvalResult::Reserved(word) => match unary {
+                    Unary::Not => match word.to_lowercase().as_str() {
+                        "nil" => Ok(EvalResult::Boolean(true)),
+                        _ => err("Reselved word has no unary oper"),
+                    },
+                    _ => err("Unary operator not supported"),
                 },
                 EvalResult::Boolean(v) => match unary {
                     Unary::Not => Ok(EvalResult::Boolean(!v)),

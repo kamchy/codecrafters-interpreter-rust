@@ -356,6 +356,10 @@ EOF  null"#;
                 inp: "!((false))",
                 outp: "true",
             },
+            Case {
+                inp: "!nil",
+                outp: "true",
+            },
         ];
         for c in cases {
             let (r, _) = evaluate_with_code(c.inp);
