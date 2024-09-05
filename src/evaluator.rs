@@ -73,6 +73,7 @@ impl Evaluator {
             Ok(val) => match val {
                 EvalResult::Numeric(n) => match unary {
                     Unary::Minus => Ok(EvalResult::Numeric(-n)),
+                    Unary::Not => Ok(EvalResult::Boolean(n == 0.0)),
                     _ => Err(EvalError {
                         s: "Numeric arg can only be used with <minus> operator".into(),
                     }),
