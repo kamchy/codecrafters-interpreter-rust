@@ -155,12 +155,20 @@ fn calculate(lv: EvalResult, op: Binary, rv: EvalResult) -> Result {
                 Binary::NotEqual => Ok(EvalResult::Boolean(l != r)),
                 Binary::InvalidBinary(_) => err("Invalid binary operator"),
             },
+            EvalResult::String(ref r) => match op {
+
+                Binary::EqualEqual =>  Ok(EvalResult::Boolean(false)),
+                Binary::NotEqual => Ok(EvalResult::Boolean(false)),
+                _=> err("Only num != str and num == str supported")
+            }
             _ => err("Right arg should be numeric"),
         },
         EvalResult::String(ref l) => match rv {
 
             EvalResult::String(ref r) => match op {
                 Binary::Plus => Ok(EvalResult::String(l.to_owned() + r)),
+                Binary::EqualEqual => Ok(EvalResult::Boolean(l == r)),
+                Binary::NotEqual => Ok(EvalResult::Boolean(l != r)),
                 _ => err("Only plus allowed on strings")
             }
             EvalResult::Numeric(n) => match op {
