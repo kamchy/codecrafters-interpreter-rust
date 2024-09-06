@@ -1,5 +1,6 @@
 use std::{
     error::Error,
+    f64,
     fmt::{Display, Write},
     str::FromStr,
 };
@@ -29,6 +30,18 @@ impl Display for EvalResult {
         f.write_str(&s)
     }
 }
+// trait ResultBox<T> {
+//     fn get(&self) -> T;
+// }
+// impl<T> ResultBox<T> for EvalResult {
+//     fn get(&self) -> T {
+//         match *self {
+//             Numeric(n) => n,
+//             Boolean(b) => b,
+//             String(s) => s,
+//             Reserved(s) => s,
+//         }
+//     }
 
 #[derive(Debug)]
 pub struct EvalError {
@@ -51,6 +64,11 @@ impl Display for EvalError {
 /// Creates Err variant from statuc string
 fn err(s: &'static str) -> Result {
     Err(EvalError { s: s.into() })
+}
+
+/// Creates Ok variant from numeric value
+fn ok_num(n: f64) -> Result {
+    Ok(EvalResult::Numeric(n))
 }
 
 /// Evaluator of expressions
@@ -102,8 +120,11 @@ impl Evaluator {
         }
     }
 
-    fn eval_binary(&self, _lex: Expression, _op: Binary, _rex: Expression) -> Result {
-        Err(EvalError::new("unimplemented!()".into()))
+    fn eval_binary(&self, lex: Expression, op: Binary, rex: Expression) -> Result {
+        let lr = self.eval(lex);
+        let rr = self.eval(rex);
+
+        calculate(lr?, op, rr?)
     }
 
     pub fn eval(&self, e: Expression) -> Result {
@@ -115,6 +136,31 @@ impl Evaluator {
             Expression::Invalid(s) => Err(EvalError::new(format!("Invalid expresstion: {}", s))),
         }
     }
+}
+
+fn calculate(lv: EvalResult, op: Binary, rv: EvalResult) -> Result {
+
+    let res = match lv {
+        EvalResult::Numeric(l) => match rv {
+            EvalResult::Numeric(r) => match op {
+                Binary::Plus => Ok(EvalResult::Numeric(l + r)),
+                Binary::Minus => Ok(EvalResult::Numeric(l - r)),
+                Binary::Divide => Ok(EvalResult::Numeric(l / r)),
+                Binary::Multiply => Ok(EvalResult::Numeric(l * r)),
+                Binary::Less => Ok(EvalResult::Boolean(l < r)),
+                Binary::LessEqual => Ok(EvalResult::Boolean(l <= r)),
+                Binary::Greater => Ok(EvalResult::Boolean(l > r)),
+                Binary::GreaterEqual => Ok(EvalResult::Boolean(l >= r)),
+                Binary::EqualEqual => Ok(EvalResult::Boolean(l == r)),
+                Binary::NotEqual => Ok(EvalResult::Boolean(l != r)),
+                Binary::InvalidBinary(_) => err("Invalid binary operator"),
+            },
+            _ => err("Right arg should be numeric"),
+        },
+        _ => err("Expected numeric arg"),
+    };
+    eprint!("left: {} right: {}, result: {:?}\n", lv, rv, res);
+    res
 }
 
 #[cfg(test)]
