@@ -365,6 +365,14 @@ EOF  null"#;
                 outp: "4",
             },
             Case {
+                inp: "\"hello\" + \"word\"",
+                outp: "helloword",
+            },
+            Case {
+                inp: "\"foo\"* 3",
+                outp: "foofoofoo",
+            },
+            Case {
                 inp: "42 / 5 ",
                 outp: "8.4",
             },

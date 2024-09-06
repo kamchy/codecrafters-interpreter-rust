@@ -157,9 +157,21 @@ fn calculate(lv: EvalResult, op: Binary, rv: EvalResult) -> Result {
             },
             _ => err("Right arg should be numeric"),
         },
+        EvalResult::String(ref l) => match rv {
+
+            EvalResult::String(ref r) => match op {
+                Binary::Plus => Ok(EvalResult::String(l.to_owned() + r)),
+                _ => err("Only plus allowed on strings")
+            }
+            EvalResult::Numeric(n) => match op {
+                Binary::Multiply => Ok(EvalResult::String(l.repeat(n.round() as usize))),
+                _ => err("Only str*num and str+str allowed")
+            },
+            _ => err("No other binary operations on strings")
+        }
         _ => err("Expected numeric arg"),
     };
-    eprint!("left: {} right: {}, result: {:?}\n", lv, rv, res);
+    eprint!("left: {} right: {}, op: {}| result: {:?}\n", lv, rv, op, res);
     res
 }
 
