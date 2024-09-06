@@ -360,6 +360,22 @@ EOF  null"#;
                 inp: "!nil",
                 outp: "true",
             },
+            Case {
+                inp: "1+3",
+                outp: "4",
+            },
+            Case {
+                inp: "42 / 5 ",
+                outp: "8.4",
+            },
+            Case {
+                inp: "18 * 3 / (3 * 6) ",
+                outp: "3",
+            },
+            Case {
+                inp: "(10.40 * 2) / 2 ",
+                outp: "10.4",
+            },
         ];
         for c in cases {
             let (r, _) = evaluate_with_code(c.inp);
