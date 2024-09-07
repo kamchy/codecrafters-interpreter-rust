@@ -188,7 +188,7 @@ impl Evaluator {
 }
 
 fn runtime_error(arg: &str, ln: u64) -> std::result::Result<EvalResult, EvalError> {
-    Err(EvalError { s: arg.to_string() })
+    Err(EvalError { s: format!("{}\n[Line {}]", arg.to_string(), ln) })
 }
 
 fn calculate(lv: EvalResult, op: Binary, rv: EvalResult) -> Result {
