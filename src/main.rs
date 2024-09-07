@@ -12,6 +12,9 @@ use evaluator::EvalError;
 use evaluator::EvalResult;
 use token::Token;
 use utils::contents;
+const RUNTIME_ERRROR_CODE: u8 = 70u8;
+const PARSE_ERROR_CODE: u8 = 65u8;
+
 fn main() -> ExitCode {
     let args: Vec<String> = env::args().collect();
     if args.len() < 3 {
@@ -44,7 +47,7 @@ fn tokenize(s: &str) -> ExitCode {
         match token.typ {
             token::TokenType::Unknown(_) => {
                 eprintln!("{}", token);
-                exit_code = ExitCode::from(65);
+                exit_code = ExitCode::from(PARSE_ERROR_CODE);
             }
             _ => println!("{}", token),
         }
@@ -58,7 +61,7 @@ fn parse_with_code(s: &str) -> (parser::Expression, u8) {
     let mut parser = parser::Parser::new(tokens);
     let expr = parser.parse();
     match expr {
-        parser::Expression::Invalid(_) => exit_code = 65,
+        parser::Expression::Invalid(_) => exit_code = PARSE_ERROR_CODE,
         _ => (),
     }
     (expr, exit_code)
@@ -80,7 +83,11 @@ fn evaluate_with_code(s: &str) -> (Result<EvalResult, EvalError>, u8) {
     let (expr, code) = parse_with_code(s);
     let ev = evaluator::Evaluator {};
     let result = ev.eval(expr);
-    (result, code)
+    match result {
+        Ok(res) => (Ok(res), code),
+        Err(runtime_error) => (Err(runtime_error), RUNTIME_ERRROR_CODE)
+    }
+
 }
 
 fn evaluate(s: &str) -> ExitCode {

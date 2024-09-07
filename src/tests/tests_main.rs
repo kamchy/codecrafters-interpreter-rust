@@ -281,23 +281,41 @@ fn evaluate_cases() {
             outp: "3",
         },
         Case {
-            inp: "(10.40 * 2) / 2 ",
-            outp: "10.4",
+            inp: "-\"foo\" ",
+            outp: "Operand must be a number.",
         },
+        Case {
+            inp: "-true",
+            outp: "Operand must be a number.",
+        },
+        Case {
+            inp: "-(\"foo\" + \"bar\") ",
+            outp: "Operand must be a number.",
+        },
+
 
     ];
 
     for c in cases {
-        let (r, _) = evaluate_with_code(c.inp);
-        match r {
-            Ok(eres) => assert_eq!(
+        let (r, num) = evaluate_with_code(c.inp);
+        match (r, num) {
+            (Ok(eres), num) => {
+                assert_eq!(
                 c.outp,
                 eres.to_string(),
                 "Testing case {:?} got {}",
                 c,
                 eres
-            ),
-            Err(error) => panic!("case: {:?}, error: {}", c, error),
+            );
+            //assert_eq!(num, 60)
+        },
+           (Err(ee), num) => {
+            if ee.s == "Operand must be a number." {
+                assert_eq!(num, RUNTIME_ERRROR_CODE)
+            } else {
+              panic!("case: {:?}, error: {}", c, ee)
+            }
+           },
         }
     }
 }
