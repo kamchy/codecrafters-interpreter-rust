@@ -310,8 +310,9 @@ fn evaluate_cases() {
             //assert_eq!(num, 60)
         },
            (Err(ee), num) => {
-            if ee.s == "Operand must be a number." {
-                assert_eq!(num, RUNTIME_ERRROR_CODE)
+            if ee.s.starts_with("Operand must be a number.") {
+                assert_eq!(num, RUNTIME_ERRROR_CODE);
+                assert_eq!(ee.s, "Operand must be a number.\n[Line 1]");
             } else {
               panic!("case: {:?}, error: {}", c, ee)
             }
