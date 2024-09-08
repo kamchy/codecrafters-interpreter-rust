@@ -192,7 +192,7 @@ impl Evaluator {
         };
         match res {
             Ok(ref r) => println!("{}", *r),
-            Err(ref r) => eprint!("{}", *r)
+            Err(ref r) => ()
         };
         res
     }
@@ -268,13 +268,13 @@ fn calculate(lv: EvalResult, op: Binary, rv: EvalResult) -> Result {
         },
         _ => err("Expected numeric arg"),
     };
-    eprint!(
-        "left: {} right: {}, op: {}| result: {:?}\n",
-        lv.clone(),
-        rv.clone(),
-        op,
-        res
-    );
+    // eprint!(
+    //     "left: {} right: {}, op: {}| result: {:?}\n",
+    //     lv.clone(),
+    //     rv.clone(),
+    //     op,
+    //     res
+    // );
     res
 }
 

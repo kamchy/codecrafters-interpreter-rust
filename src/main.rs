@@ -31,6 +31,7 @@ fn main() -> ExitCode {
         "tokenize" => tokenize(&contents(&filename)),
         "parse" => parse(&contents(&filename)),
         "evaluate" => evaluate(&contents(&filename)),
+        "run" => run(&contents(&filename)),
         _ => {
             writeln!(io::stderr(), "Unknown command: {}", command).unwrap();
             return ExitCode::FAILURE;
@@ -116,10 +117,18 @@ fn evaluate_with_code(s: &str) -> (Result<EvalResult, EvalError>, u8) {
 }
 
 fn evaluate(s: &str) -> ExitCode {
-    let (_result, code) = evaluate_with_code(s);
-    // match result {
-    //     Ok(res) => println!("{}", res),
-    //     Err(e) => eprint!("{}", e),
-    // }
+    let (result, code) = evaluate_with_code(s);
+    match result {
+        Ok(res) => println!("{}", res),
+        Err(e) => eprint!("{}", e),
+    }
     ExitCode::from(code)
 }
+
+fn run(s: &str) -> ExitCode {
+    
+    let (_result, code) = evaluate_with_code(s);
+    
+    ExitCode::from(code)
+}
+
