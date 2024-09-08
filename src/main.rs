@@ -126,7 +126,11 @@ fn evaluate(s: &str) -> ExitCode {
 }
 
 fn run(s: &str) -> ExitCode {
-    let (_result, code) = evaluate_with_code(s);
+    let (result, code) = evaluate_with_code(s);
+    match result {
+        Ok(res) => println!("{}", res),
+        Err(_e) => (),
+    }
     ExitCode::from(code)
 }
 

@@ -190,10 +190,10 @@ impl Evaluator {
                 self.eval_expr(e)
             },
         };
-        match res {
-            Ok(ref r) => println!("{}", *r),
-            Err(ref r) => ()
-        };
+        // match res {
+        //     Ok(ref r) => println!("{}", *r),
+        //     Err(ref r) => ()
+        // };
         res
     }
 
