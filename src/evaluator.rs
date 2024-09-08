@@ -1,7 +1,7 @@
 use std::{error::Error, fmt::Display};
 
 use crate::{
-    parser::{Binary, Expression, Unary},
+    parser::{Binary, Expression, Program, Stmt, Unary},
     token::{Numeric, Token, TokenType},
 };
 
@@ -126,7 +126,7 @@ impl Evaluator {
     }
 
     fn eval_unary(&self, unary: Unary, ex: Expression) -> Result {
-        let res = self.eval(ex);
+        let res = self.eval_expr(ex);
         match res {
             Ok(val) => match val {
                 EvalResult::Numeric {
@@ -170,16 +170,37 @@ impl Evaluator {
     }
 
     fn eval_binary(&self, lex: Expression, op: Binary, rex: Expression) -> Result {
-        let lr = self.eval(lex);
-        let rr = self.eval(rex);
+        let lr = self.eval_expr(lex);
+        let rr = self.eval_expr(rex);
 
         calculate(lr?, op, rr?)
     }
 
-    pub fn eval(&self, e: Expression) -> Result {
+    pub(crate) fn eval(&self, p: Program) -> Vec<Result>{
+        p.statements.iter().map(|s| self.eval_stmt(s.clone())).collect()
+
+    }
+
+    fn eval_stmt(&self, s: Stmt) -> Result {
+        let res = match s {
+            Stmt::Print(e) => {
+                self.eval_expr(e)
+            },
+            Stmt::Expression(e) => {
+                self.eval_expr(e)
+            },
+        };
+        match res {
+            Ok(ref r) => println!("{}", *r),
+            Err(ref r) => eprint!("{}", *r)
+        };
+        res
+    }
+
+    pub fn eval_expr(&self, e: Expression) -> Result {
         match e {
             Expression::Primary(t) => self.eval_primary(t),
-            Expression::Paren(e) => self.eval(*e),
+            Expression::Paren(e) => self.eval_expr(*e),
             Expression::UnaryEx(unary, ex) => self.eval_unary(unary, *ex),
             Expression::BinaryEx(l, op, r) => self.eval_binary(*l, op, *r),
             Expression::Invalid(s) => Err(EvalError::new(format!("Invalid expresstion: {}", s))),
@@ -282,7 +303,7 @@ mod test_evaluator {
     fn eval_nil() {
         let expr = crate::parser::Expression::Primary(Token::nil(1));
         let e = Evaluator::new();
-        if let Ok(EvalResult::Reserved { value, token }) = e.eval(expr) {
+        if let Ok(EvalResult::Reserved { value, token }) = e.eval_expr(expr) {
             assert_eq!(value, "nil");
             assert_eq!(token.typ, TokenType::Nil)
         }
@@ -291,7 +312,7 @@ mod test_evaluator {
     fn eval_string() {
         let expr = crate::parser::Expression::Primary(Token::of_string("hello", 1));
         let e = Evaluator::new();
-        match e.eval(expr) {
+        match e.eval_expr(expr) {
             Ok(EvalResult::String { value, token }) => {
                 assert_eq!(value, "hello");
                 assert_eq!(token.typ, TokenType::StringLiteral);
@@ -307,7 +328,7 @@ mod test_evaluator {
     fn eval_number() {
         let expr = crate::parser::Expression::Primary(Token::of_numeric(Numeric(12f64), 1));
         let e = Evaluator::new();
-        match e.eval(expr) {
+        match e.eval_expr(expr) {
             Ok(EvalResult::Numeric { value, token }) => {
                 assert_eq!(value, 12f64);
                 assert_eq!(token.typ, TokenType::Number(token::Numeric(12f64)))
@@ -324,7 +345,7 @@ mod test_evaluator {
     fn simple_eval_value(b: bool) {
         let expr = crate::parser::Expression::Primary(Token::of_bool(b, 1));
         let e = Evaluator::new();
-        match e.eval(expr) {
+        match e.eval_expr(expr) {
             Ok(EvalResult::Boolean { value, token }) => {
                 assert_eq!(value, b);
                 assert_eq!(

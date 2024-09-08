@@ -1,5 +1,6 @@
 use crate::token;
 use core::fmt::Display;
+use std::thread::current;
 use token::{Token, TokenType};
 
 /// Parser for lox.
@@ -9,14 +10,95 @@ pub(crate) struct Parser {
     tokens: Vec<Token>,
     curr: usize,
 }
+/// Statement can be either a print statement or expression statement
+#[derive(Debug, Clone)]
+pub(crate)  enum Stmt {
+    Print(Expression),
+    Expression(Expression)
+}
+impl Stmt {
+    fn is_valid(&self)->bool {
+        match self {
+            Stmt::Print(e) => e.is_valid(),
+            Stmt::Expression(e) => e.is_valid()
+        }
+    }
+
+    fn to_string(&self) -> String {
+        match self {
+            Stmt::Print(e) => e.to_string(),
+            Stmt::Expression(e) => e.to_string()
+        }
+    }
+}
+
+
+/// Prorgam is a vector of statements
+#[derive(Debug)]
+pub(crate) struct Program {
+    pub statements: Vec<Stmt>,
+}
+
+
+impl Program {
+    fn new(v: Vec<Stmt>) -> Self {
+        eprint!("Constructed Program with statements: \n{:?}", v);
+        Program {statements: v }
+    }
+      /// returns optional first syntax error
+    pub(crate) fn syntax_errors(&self) -> Option<Stmt> {
+        self.statements.iter().filter(|s| !s.is_valid()).take(1).next().map(|s| s.to_owned())
+    }
+    pub(crate) fn to_string(&self) -> String {
+        self.statements.iter().map(|s| s.to_string()).collect()
+    }
+}
+
 /// See https://craftinginterpreters.com/parsing-expressions.html#recursive-descent-parsing
 impl Parser {
-    pub(crate) fn parse(&mut self) -> Expression {
-        self.expression()
+    pub(crate) fn parse(&mut self) -> Program {
+        let mut res = Vec::new();
+        let mut is_end: bool = false;
+        while !is_end {
+                res.push(self.statement());                
+                is_end = self.at_end();
+
+        }
+        Program { statements: res }
+    }
+
+    fn statement(&mut self) -> Stmt {
+        let c = self.current();
+        let s = match c.typ{
+            TokenType::Print => self.print_statement(),
+            _ => self.expression_statement()
+        };
+        
+        s
+    }
+
+    fn print_statement(&mut self) -> Stmt {
+        let s = Stmt::Print(self.expression());
+        if self.current().typ == TokenType::Semicolon {
+            self.advance();
+        };
+        s
+    }
+
+    fn expression_statement(&mut self) -> Stmt{
+        let s = Stmt::Expression(self.expression());
+        if self.current().typ == TokenType::Semicolon {
+            self.advance();
+        };
+        s
     }
 
     pub(crate) fn new(tokens: Vec<Token>) -> Self {
+        //eprint!("new parser: tokens:{:?}", tokens);
         Parser { tokens, curr: 0 }
+    }
+    fn at_end(&self) -> bool {
+        self.curr == self.tokens.len() - 1
     }
 
     fn advance(&mut self) {
@@ -150,6 +232,7 @@ impl Parser {
         self.advance();
         prim
     }
+
 }
 
 #[derive(Debug, Clone)]
@@ -232,13 +315,21 @@ impl Unary {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub(crate) enum Expression {
     Primary(Token),
     BinaryEx(Box<Expression>, Binary, Box<Expression>),
     UnaryEx(Unary, Box<Expression>),
     Paren(Box<Expression>),
     Invalid(String),
+}
+impl Expression {
+    fn is_valid(&self) -> bool {
+        match self {
+            Self::Invalid(_) => false,
+            _ => true
+       }
+    }
 }
 
 impl Display for Expression {
