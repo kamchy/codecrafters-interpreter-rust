@@ -67,7 +67,8 @@ impl<'a> Lexer<'a> {
                 Some('\"') => break Some(Token::new(TokenType::StringLiteral, self.line, literal)),
                 Some('\n') => {
                     self.line += 1;
-                    break Some(unknown(literal, self.line));
+                    //break Some(unknown(literal, self.line));
+                    literal.push('\n')
                 }
                 None => {
                     break Some(unknown(literal, self.line));
