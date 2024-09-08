@@ -78,6 +78,7 @@ impl Parser {
     }
 
     fn print_statement(&mut self) -> Stmt {
+        self.advance();
         let s = Stmt::Print(self.expression());
         if self.current().typ == TokenType::Semicolon {
             self.advance();
