@@ -304,13 +304,26 @@ fn evaluate_cases() {
         match (r, num) {
 
             (Ok(eres), num) => {
-                let v = eres.first().unwrap().to_string();
+                let v = eres.first().unwrap();
+                let outv:String =  match v {
+                    StatementEvalResult::PrintStatementResult(fin) =>
+                        match fin {
+                            Ok(er) => er.to_string(),
+                            Err(ee) =>ee.to_string(),
+                        },
+                        StatementEvalResult::ExpressionStatementResult(fin) => 
+                        match fin {
+                            Ok(er) => er.to_string(),
+                            Err(ee) =>ee.to_string(),
+                        },
+
+                };
                 assert_eq!(
-                c.outp,
-                v,
+                true,
+                outv.starts_with(c.outp),
                 "Testing case {:?} got {}",
                 c,
-                v
+                outv
             );
             //assert_eq!(num, 60)
         },

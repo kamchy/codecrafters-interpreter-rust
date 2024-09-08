@@ -11,6 +11,7 @@ mod token;
 mod utils;
 use evaluator::EvalError;
 use evaluator::EvalResult;
+use evaluator::StatementEvalResult;
 use parser::Stmt;
 use token::Token;
 use utils::contents;
@@ -101,26 +102,16 @@ fn print_expr(e: parser::Expression) {
     }
 }
 
-fn evaluate_with_code(s: &str) -> (Result<Vec<EvalResult>, EvalError>, u8) {
+fn evaluate_with_code(s: &str) -> (Result<Vec<StatementEvalResult>, EvalError>, u8) {
     let (prog, code) = parse_with_code(s);
     let ev = evaluator::Evaluator {};
 
-    let resvec: Result<Vec<EvalResult>, EvalError> = ev.eval(prog).into_iter().collect();
+    let resvec: Result<Vec<StatementEvalResult>, EvalError> = ev.eval(prog).into_iter().collect();
 
     match resvec {
         Ok(v) => (Ok(v), code),
         Err(res) => (Err(res), if code == 0 { RUNTIME_ERRROR_CODE } else { code }),
     }
-    // let (results, errors) : ( Vec<Result<EvalResult, EvalError>>,  Vec<Result<EvalResult, EvalError>>) = resvec.into_iter().partition(|w| w.is_ok());
-    // if let Some(first_err) = errors.into_iter().take(1).next() {
-    //     (first_err, if code == 0 { RUNTIME_ERRROR_CODE}  else {code})
-    // } else {
-    //     if let Some(first_res) = results.into_iter().take(1).next() {
-    //         (first_res, code)
-    //     } else {
-    //         panic!("unexpected")
-    //     }
-    // }
 }
 
 fn evaluate(s: &str) -> ExitCode {
@@ -132,9 +123,12 @@ fn evaluate(s: &str) -> ExitCode {
     ExitCode::from(code)
 }
 
-fn print_res(res: Vec<EvalResult>) {
+fn print_res(res: Vec<StatementEvalResult>) {
     for r in res {
-        println!("{}", r);
+        match r {
+            StatementEvalResult::PrintStatementResult(er) => {let _ = er.map(|evalres| println!("{}", evalres)); },
+            StatementEvalResult::ExpressionStatementResult(_) => (),
+        }
     }
 }
 
