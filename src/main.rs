@@ -111,7 +111,7 @@ fn evaluate_with_code(s: &str) -> (Result<Vec<StatementEvalResult>, EvalError>, 
 
     match resvec {
         Ok(v) => (Ok(v), code),
-        Err(res) => (Err(res), if code == 0 { RUNTIME_ERRROR_CODE } else { code }),
+        Err(res) => (Err(res),  RUNTIME_ERRROR_CODE ),
     }
 }
 
