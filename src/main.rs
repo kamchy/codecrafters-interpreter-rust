@@ -6,9 +6,9 @@ use std::process::ExitCode;
 mod evaluator;
 mod lexer;
 mod parser;
-mod utils;
 pub mod tests;
 mod token;
+mod utils;
 use evaluator::EvalError;
 use evaluator::EvalResult;
 use parser::Stmt;
@@ -63,15 +63,20 @@ fn parse_with_code_and_errstmt(s: &str) -> (parser::Program, u8, Option<Stmt>) {
     let mut parser = parser::Parser::new(tokens);
     let prog = parser.parse();
 
-
     let opt_err = prog.syntax_errors();
-    (prog, if opt_err.is_none() { 0 } else  { PARSE_ERROR_CODE }, opt_err )
-
+    (
+        prog,
+        if opt_err.is_none() {
+            0
+        } else {
+            PARSE_ERROR_CODE
+        },
+        opt_err,
+    )
 }
 fn parse_with_code(s: &str) -> (parser::Program, u8) {
     let (prog, code, _) = parse_with_code_and_errstmt(s);
     (prog, code)
-
 }
 
 fn parse(s: &str) -> ExitCode {
@@ -80,9 +85,8 @@ fn parse(s: &str) -> ExitCode {
     for s in expr.statements {
         match s {
             Stmt::Expression(e) => print_expr(e),
-            Stmt::Print(e) => print_expr(e)
+            Stmt::Print(e) => print_expr(e),
         }
-
     }
 
     ExitCode::from(code)
@@ -97,40 +101,48 @@ fn print_expr(e: parser::Expression) {
     }
 }
 
-fn evaluate_with_code(s: &str) -> (Result<EvalResult, EvalError>, u8) {
+fn evaluate_with_code(s: &str) -> (Result<Vec<EvalResult>, EvalError>, u8) {
     let (prog, code) = parse_with_code(s);
     let ev = evaluator::Evaluator {};
 
-    let resvec = ev.eval(prog);
-    let (results, errors) : ( Vec<Result<EvalResult, EvalError>>,  Vec<Result<EvalResult, EvalError>>) = resvec.into_iter().partition(|w| w.is_ok());
-    if let Some(first_err) = errors.into_iter().take(1).next() {
-        (first_err, if code == 0 { RUNTIME_ERRROR_CODE}  else {code})
-    } else {
-        if let Some(first_res) = results.into_iter().take(1).next() {
-            (first_res, code)
-        } else {
-            panic!("unexpected")
-        }
+    let resvec: Result<Vec<EvalResult>, EvalError> = ev.eval(prog).into_iter().collect();
+
+    match resvec {
+        Ok(v) => (Ok(v), code),
+        Err(res) => (Err(res), if code == 0 { RUNTIME_ERRROR_CODE } else { code }),
     }
-
-
+    // let (results, errors) : ( Vec<Result<EvalResult, EvalError>>,  Vec<Result<EvalResult, EvalError>>) = resvec.into_iter().partition(|w| w.is_ok());
+    // if let Some(first_err) = errors.into_iter().take(1).next() {
+    //     (first_err, if code == 0 { RUNTIME_ERRROR_CODE}  else {code})
+    // } else {
+    //     if let Some(first_res) = results.into_iter().take(1).next() {
+    //         (first_res, code)
+    //     } else {
+    //         panic!("unexpected")
+    //     }
+    // }
 }
 
 fn evaluate(s: &str) -> ExitCode {
     let (result, code) = evaluate_with_code(s);
     match result {
-        Ok(res) => println!("{}", res),
+        Ok(res) => print_res(res),
         Err(e) => eprint!("{}", e),
     }
     ExitCode::from(code)
 }
 
+fn print_res(res: Vec<EvalResult>) {
+    for r in res {
+        println!("{}", r);
+    }
+}
+
 fn run(s: &str) -> ExitCode {
     let (result, code) = evaluate_with_code(s);
     match result {
-        Ok(res) => println!("{}", res),
-        Err(_e) => (),
+        Ok(res) => print_res(res),
+        Err(e) => ()//println!("{}", e),
     }
     ExitCode::from(code)
 }
-

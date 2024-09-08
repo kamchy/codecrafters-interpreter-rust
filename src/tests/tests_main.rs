@@ -292,20 +292,25 @@ fn evaluate_cases() {
             inp: "-(\"foo\" + \"bar\") ",
             outp: "Operand must be a number.",
         },
-
+        Case {
+            inp: " \"foo\n  \n bar\" ",
+            outp: "foo\n  \n bar",
+        },
 
     ];
 
     for c in cases {
         let (r, num) = evaluate_with_code(c.inp);
         match (r, num) {
+
             (Ok(eres), num) => {
+                let v = eres.first().unwrap().to_string();
                 assert_eq!(
                 c.outp,
-                eres.to_string(),
+                v,
                 "Testing case {:?} got {}",
                 c,
-                eres
+                v
             );
             //assert_eq!(num, 60)
         },

@@ -190,10 +190,7 @@ impl Evaluator {
                 self.eval_expr(e)
             },
         };
-        // match res {
-        //     Ok(ref r) => println!("{}", *r),
-        //     Err(ref r) => ()
-        // };
+
         res
     }
 
@@ -266,6 +263,19 @@ fn calculate(lv: EvalResult, op: Binary, rv: EvalResult) -> Result {
             },
             _ => err("No other binary operations on strings"),
         },
+        EvalResult::Boolean { value: lv, token: ltok } => match rv {
+            EvalResult::Boolean { value: rv, token: rtok } => match op {
+                Binary::EqualEqual => Ok(EvalResult::Boolean { value: lv == rv, token: ltok }),
+                Binary::NotEqual => Ok(EvalResult::Boolean { value: lv != rv, token: ltok }),
+                _ => err("Bool operators allowed: only == and !=.")
+            },
+            _ => match op {
+                Binary::EqualEqual => Ok(EvalResult::Boolean { value: false, token: ltok }),
+                Binary::NotEqual => Ok(EvalResult::Boolean { value: true, token: ltok }),
+                _ => err("Operator not supported")
+            }
+        }
+
         _ => err("Expected numeric arg"),
     };
     // eprint!(
