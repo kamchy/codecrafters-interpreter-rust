@@ -6,6 +6,14 @@ use crate::{
 };
 
 pub type Result = std::result::Result<EvalResult, EvalError>;
+pub type StatementResult = std::result::Result<StatementEvalResult, EvalError>;
+
+/// Results of Stmt evaluation
+#[derive(Debug, PartialEq)]
+pub enum StatementEvalResult {
+    ExpressionStatementResult(Result),
+    PrintStatementResult(Result)
+}
 
 #[derive(Debug, PartialEq)]
 pub enum EvalResult {
@@ -77,7 +85,7 @@ impl Display for EvalResult {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct EvalError {
     pub s: String,
 }
@@ -157,13 +165,12 @@ impl Evaluator {
                     _ => err("Bool arg can only be used with negation"),
                 },
                 EvalResult::String {
-                    value: s,
+                    value: _s,
                     token: tok,
                 } => match unary {
                     Unary::Minus => runtime_error("Operand must be a number.", tok.ln),
-                    op => err("Operator cannot be used on string"),
+                    _op => err("Operator cannot be used on string"),
                 },
-                _ => err("No unary operators for string"),
             },
             Err(_) => res,
         }
@@ -176,18 +183,18 @@ impl Evaluator {
         calculate(lr?, op, rr?)
     }
 
-    pub(crate) fn eval(&self, p: Program) -> Vec<Result>{
+    pub(crate) fn eval(&self, p: Program) -> Vec<StatementResult>{
         p.statements.iter().map(|s| self.eval_stmt(s.clone())).collect()
 
     }
 
-    fn eval_stmt(&self, s: Stmt) -> Result {
+    fn eval_stmt(&self, s: Stmt) -> StatementResult {
         let res = match s {
             Stmt::Print(e) => {
-                self.eval_expr(e)
+                Ok(StatementEvalResult::PrintStatementResult(self.eval_expr(e)))
             },
             Stmt::Expression(e) => {
-                self.eval_expr(e)
+                Ok(StatementEvalResult::ExpressionStatementResult(self.eval_expr(e)))
             },
         };
 
@@ -264,7 +271,7 @@ fn calculate(lv: EvalResult, op: Binary, rv: EvalResult) -> Result {
             _ => err("No other binary operations on strings"),
         },
         EvalResult::Boolean { value: lv, token: ltok } => match rv {
-            EvalResult::Boolean { value: rv, token: rtok } => match op {
+            EvalResult::Boolean { value: rv, token: _rtok } => match op {
                 Binary::EqualEqual => Ok(EvalResult::Boolean { value: lv == rv, token: ltok }),
                 Binary::NotEqual => Ok(EvalResult::Boolean { value: lv != rv, token: ltok }),
                 _ => err("Bool operators allowed: only == and !=.")
