@@ -104,7 +104,7 @@ fn evaluate_with_code(s: &str) -> (Result<EvalResult, EvalError>, u8) {
     let resvec = ev.eval(prog);
     let (results, errors) : ( Vec<Result<EvalResult, EvalError>>,  Vec<Result<EvalResult, EvalError>>) = resvec.into_iter().partition(|w| w.is_ok());
     if let Some(first_err) = errors.into_iter().take(1).next() {
-        (first_err, RUNTIME_ERRROR_CODE)
+        (first_err, if code == 0 { RUNTIME_ERRROR_CODE}  else {code})
     } else {
         if let Some(first_res) = results.into_iter().take(1).next() {
             (first_res, code)

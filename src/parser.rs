@@ -60,7 +60,7 @@ impl Parser {
         let mut res = Vec::new();
         let mut is_end: bool = false;
         while !is_end {
-                res.push(self.statement());                
+                res.push(self.statement());
                 is_end = self.at_end();
 
         }
@@ -73,7 +73,6 @@ impl Parser {
             TokenType::Print => self.print_statement(),
             _ => self.expression_statement()
         };
-        
         s
     }
 
