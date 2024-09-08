@@ -103,10 +103,10 @@ impl Display for EvalError {
     }
 }
 
-/// Creates Err variant from statuc string
-fn err(s: &'static str) -> Result {
-    Err(EvalError { s: s.into() })
-}
+// /// Creates Err variant from statuc string
+// fn err(s: &'static str) -> Result {
+//     Err(EvalError { s: s.into() })
+// }
 
 // /// Creates Ok variant from numeric value
 // fn ok_num(n: f64) -> Result {
@@ -143,7 +143,7 @@ impl Evaluator {
                 } => match unary {
                     Unary::Minus => Ok(EvalResult::of_numeric(-n, tok)),
                     Unary::Not => Ok(EvalResult::of_boolean(n == 0.0, tok)),
-                    _ => err("Numeric arg can only be used with <minus> operator"),
+                    _ => runtime_error("Numeric arg can only be used with <minus> operator", tok.ln),
                 },
                 EvalResult::Reserved {
                     value: word,
@@ -151,10 +151,10 @@ impl Evaluator {
                 } => match unary {
                     Unary::Not => match word.to_lowercase().as_str() {
                         "nil" => Ok(EvalResult::of_boolean(true, tok)),
-                        _ => err("Reselved word has no unary oper"),
+                        _ => runtime_error("Reselved word has no unary oper", tok.ln),
                     },
                     Unary::Minus => runtime_error("Operand must be a number.", tok.ln),
-                    _ => err("Unary operator not supported"),
+                    _ => runtime_error("Unary operator not supported", tok.ln),
                 },
                 EvalResult::Boolean {
                     value: v,
@@ -162,14 +162,14 @@ impl Evaluator {
                 } => match unary {
                     Unary::Not => Ok(EvalResult::of_boolean(!v, tok)),
                     Unary::Minus => runtime_error("Operand must be a number.", tok.ln),
-                    _ => err("Bool arg can only be used with negation"),
+                    _ => runtime_error("Bool arg can only be used with negation", tok.ln),
                 },
                 EvalResult::String {
                     value: _s,
                     token: tok,
                 } => match unary {
                     Unary::Minus => runtime_error("Operand must be a number.", tok.ln),
-                    _op => err("Operator cannot be used on string"),
+                    _op => runtime_error("Operator cannot be used on string", tok.ln),
                 },
             },
             Err(_) => res,
@@ -212,7 +212,7 @@ impl Evaluator {
     }
 }
 
-fn runtime_error(arg: &str, ln: u64) -> std::result::Result<EvalResult, EvalError> {
+fn runtime_error(arg: &str, ln: u64) -> Result {
     Err(EvalError { s: format!("{}\n[Line {}]", arg.to_string(), ln) })
 }
 
@@ -236,7 +236,7 @@ fn calculate(lv: EvalResult, op: Binary, rv: EvalResult) -> Result {
                 Binary::GreaterEqual => Ok(EvalResult::of_boolean(l >= r, ltok)),
                 Binary::EqualEqual => Ok(EvalResult::of_boolean(l == r, ltok)),
                 Binary::NotEqual => Ok(EvalResult::of_boolean(l != r, ltok)),
-                Binary::InvalidBinary(_) => err("Invalid binary operator"),
+                Binary::InvalidBinary(_) => runtime_error("Invalid binary operator", ltok.ln),
             },
             EvalResult::String {
                 value: ref _s,
@@ -244,9 +244,10 @@ fn calculate(lv: EvalResult, op: Binary, rv: EvalResult) -> Result {
             } => match op {
                 Binary::EqualEqual => Ok(EvalResult::of_boolean(false, ltok)),
                 Binary::NotEqual => Ok(EvalResult::of_boolean(false, ltok)),
-                _ => err("Only num != str and num == str supported"),
+                Binary::Plus => runtime_error("Operands must be two numbers or two strings.", ltok.ln),
+                _ => runtime_error("Only num != str and num == str supported", ltok.ln),
             },
-            _ => err("Right arg should be numeric"),
+            _ => runtime_error("Operands must be numbers.", ltok.ln),
         },
         EvalResult::String {
             value: ref l,
@@ -259,31 +260,33 @@ fn calculate(lv: EvalResult, op: Binary, rv: EvalResult) -> Result {
                 Binary::Plus => Ok(EvalResult::of_string(l.to_owned() + r, ltok)),
                 Binary::EqualEqual => Ok(EvalResult::of_boolean(l == r, ltok)),
                 Binary::NotEqual => Ok(EvalResult::of_boolean(l != r, ltok)),
-                _ => err("Only plus allowed on strings"),
+                _ => runtime_error("Only plus allowed on strings", ltok.ln),
             },
             EvalResult::Numeric {
                 value: n,
                 token: ref _rtok,
             } => match op {
                 Binary::Multiply => Ok(EvalResult::of_string(l.repeat(n.round() as usize), ltok)),
-                _ => err("Only str*num and str+str allowed"),
+                Binary::Plus => runtime_error("Operands must be two numbers or two strings.", ltok.ln),
+                _ => runtime_error("Only str*num and str+str allowed", ltok.ln),
             },
-            _ => err("No other binary operations on strings"),
+            _ => runtime_error("No other binary operations on strings", ltok.ln),
         },
         EvalResult::Boolean { value: lv, token: ltok } => match rv {
             EvalResult::Boolean { value: rv, token: _rtok } => match op {
                 Binary::EqualEqual => Ok(EvalResult::Boolean { value: lv == rv, token: ltok }),
                 Binary::NotEqual => Ok(EvalResult::Boolean { value: lv != rv, token: ltok }),
-                _ => err("Bool operators allowed: only == and !=.")
+                _ => runtime_error("Bool operators allowed: only == and !=.", ltok.ln)
             },
             _ => match op {
                 Binary::EqualEqual => Ok(EvalResult::Boolean { value: false, token: ltok }),
                 Binary::NotEqual => Ok(EvalResult::Boolean { value: true, token: ltok }),
-                _ => err("Operator not supported")
+                Binary::Multiply => runtime_error("Operands must be numbers.", ltok.ln),
+                _ => runtime_error("Operator not supported", ltok.ln)
             }
         }
 
-        _ => err("Expected numeric arg"),
+        _ => runtime_error("Expected numeric arg", 1),
     };
     // eprint!(
     //     "left: {} right: {}, op: {}| result: {:?}\n",

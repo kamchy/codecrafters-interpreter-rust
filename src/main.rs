@@ -80,6 +80,7 @@ fn parse_with_code(s: &str) -> (parser::Program, u8) {
     (prog, code)
 }
 
+// TODO Stmt should be a struct with expresion and type
 fn parse(s: &str) -> ExitCode {
     let (expr, code, errstmt) = parse_with_code_and_errstmt(s);
 
@@ -123,11 +124,29 @@ fn evaluate(s: &str) -> ExitCode {
     ExitCode::from(code)
 }
 
+
+
 fn print_res(res: Vec<StatementEvalResult>) {
     for r in res {
         match r {
-            StatementEvalResult::PrintStatementResult(er) => {let _ = er.map(|evalres| println!("{}", evalres)); },
-            StatementEvalResult::ExpressionStatementResult(_) => (),
+            StatementEvalResult::PrintStatementResult(er) => {
+                match er {
+                    Ok(er) => println!("{}", er),
+                    Err(er) => {
+                        println!("{}", er);
+                        break;
+                    },
+                }
+            },
+            StatementEvalResult::ExpressionStatementResult(er) => {
+                match er {
+                    Ok(er) => (),
+                    Err(er) => {
+                        println!("{}", er);
+                        break;
+                    },
+                }
+            },
         }
     }
 }
@@ -136,7 +155,7 @@ fn run(s: &str) -> ExitCode {
     let (result, code) = evaluate_with_code(s);
     match result {
         Ok(res) => print_res(res),
-        Err(e) => ()//println!("{}", e),
+        Err(e) => eprintln!("{}", e),
     }
     ExitCode::from(code)
 }
