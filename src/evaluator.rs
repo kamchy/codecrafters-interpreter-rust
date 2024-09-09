@@ -11,10 +11,10 @@ pub type StatementResult = std::result::Result<StatementEvalResult, EvalError>;
 /// Results of Stmt evaluation
 #[derive(Debug, PartialEq)]
 pub enum StatementEvalResult {
-    ExpressionStatementResult(Result),
-    PrintStatementResult(Result)
+    ExpressionStatementResult(EvalResult),
+    PrintStatementResult(EvalResult)
 }
-
+/// Result of expression evaluation
 #[derive(Debug, PartialEq)]
 pub enum EvalResult {
     Numeric { value: f64, token: Token },
@@ -191,10 +191,12 @@ impl Evaluator {
     fn eval_stmt(&self, s: Stmt) -> StatementResult {
         let res = match s {
             Stmt::Print(e) => {
-                Ok(StatementEvalResult::PrintStatementResult(self.eval_expr(e)))
+                self.eval_expr(e).map(|r| StatementEvalResult::PrintStatementResult(r))
+                //Ok(StatementEvalResult::PrintStatementResult(self.eval_expr(e)))
             },
             Stmt::Expression(e) => {
-                Ok(StatementEvalResult::ExpressionStatementResult(self.eval_expr(e)))
+                self.eval_expr(e).map(|r| StatementEvalResult::ExpressionStatementResult(r))
+                //Ok(StatementEvalResult::ExpressionStatementResult(self.eval_expr(e)))
             },
         };
 

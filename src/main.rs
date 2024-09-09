@@ -12,6 +12,7 @@ mod utils;
 use evaluator::EvalError;
 use evaluator::EvalResult;
 use evaluator::StatementEvalResult;
+use evaluator::StatementResult;
 use parser::Stmt;
 use token::Token;
 use utils::contents;
@@ -103,23 +104,33 @@ fn print_expr(e: parser::Expression) {
     }
 }
 
-fn evaluate_with_code(s: &str) -> (Result<Vec<StatementEvalResult>, EvalError>, u8) {
+fn evaluate_with_code(s: &str) -> (Vec<StatementEvalResult>, Option<EvalError>, u8) {
     let (prog, code) = parse_with_code(s);
     let ev = evaluator::Evaluator {};
 
-    let resvec: Result<Vec<StatementEvalResult>, EvalError> = ev.eval(prog).into_iter().collect();
-
-    match resvec {
-        Ok(v) => (Ok(v), code),
-        Err(res) => (Err(res),  RUNTIME_ERRROR_CODE ),
+    let mut res = Vec::new();
+    let mut optErr = None;
+    let resvec: Vec<StatementResult> = ev.eval(prog);
+    for sr in resvec {
+        match sr {
+            Ok(ser) => res.push(ser),
+            Err(ever) => {
+                optErr = Some(ever); break;
+            }
+        }
     }
+
+    (res, optErr , if code == 0 { RUNTIME_ERRROR_CODE } else {code} )
+
 }
 
 fn evaluate(s: &str) -> ExitCode {
-    let (result, code) = evaluate_with_code(s);
-    match result {
-        Ok(res) => print_res(res),
-        Err(e) => eprint!("{}", e),
+    let (result, opt_err, code) = evaluate_with_code(s);
+    for r in result {
+        println!("{:?}", r);
+    }
+    if let Some(err) = opt_err {
+        eprint!("{}", err);
     }
     ExitCode::from(code)
 }
@@ -130,32 +141,19 @@ fn print_res(res: Vec<StatementEvalResult>) {
     for r in res {
         match r {
             StatementEvalResult::PrintStatementResult(er) => {
-                match er {
-                    Ok(er) => println!("{}", er),
-                    Err(er) => {
-                        println!("{}", er);
-                        break;
-                    },
-                }
+                println!("{}", er);
             },
-            StatementEvalResult::ExpressionStatementResult(er) => {
-                match er {
-                    Ok(er) => (),
-                    Err(er) => {
-                        println!("{}", er);
-                        break;
-                    },
-                }
+            StatementEvalResult::ExpressionStatementResult(_er) => {
             },
         }
     }
 }
 
 fn run(s: &str) -> ExitCode {
-    let (result, code) = evaluate_with_code(s);
-    match result {
-        Ok(res) => print_res(res),
-        Err(e) => eprintln!("{}", e),
+    let (result, opt_err, code) = evaluate_with_code(s);
+    print_res(result);
+    if let Some(e)  = opt_err {
+        println!("{}", e);
     }
     ExitCode::from(code)
 }
