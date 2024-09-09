@@ -153,7 +153,7 @@ fn run(s: &str) -> ExitCode {
     let (result, opt_err, code) = evaluate_with_code(s);
     print_res(result);
     if let Some(e)  = opt_err {
-        println!("{}", e);
+        eprintln!("{}", e);
     }
     ExitCode::from(code)
 }
