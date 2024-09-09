@@ -109,18 +109,18 @@ fn evaluate_with_code(s: &str) -> (Vec<StatementEvalResult>, Option<EvalError>, 
     let ev = evaluator::Evaluator {};
 
     let mut res = Vec::new();
-    let mut optErr = None;
+    let mut opt_err = None;
     let resvec: Vec<StatementResult> = ev.eval(prog);
     for sr in resvec {
         match sr {
             Ok(ser) => res.push(ser),
             Err(ever) => {
-                optErr = Some(ever); break;
+                opt_err = Some(ever); break;
             }
         }
     }
 
-    (res, optErr , if code == 0 { RUNTIME_ERRROR_CODE } else {code} )
+    (res, opt_err.clone() , if (code == 0) && opt_err.is_some(){ RUNTIME_ERRROR_CODE } else {code} )
 
 }
 
