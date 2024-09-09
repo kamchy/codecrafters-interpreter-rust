@@ -1,0 +1,4 @@
+(78 + 90 - 30) > (87 - 78) * 2;
+print !false;
+"hello" + "baz" + "bar" + "world" == "hellobazbarworld";
+print !false;
