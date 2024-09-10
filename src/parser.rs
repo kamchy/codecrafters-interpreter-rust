@@ -31,6 +31,14 @@ impl Stmt {
         }
     }
 }
+impl Display for Stmt {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Stmt::Print(e) => f.write_fmt(format_args!("{}", e)),
+            Stmt::Expression(e) => f.write_fmt(format_args!("{}", e))
+        }
+    }
+}
 
 
 /// Prorgam is a vector of statements
@@ -56,6 +64,11 @@ impl Program {
 
 /// See https://craftinginterpreters.com/parsing-expressions.html#recursive-descent-parsing
 impl Parser {
+    pub(crate) fn new(tokens: Vec<Token>) -> Self {
+        //eprint!("new parser: tokens:{:?}", tokens);
+        Parser { tokens, curr: 0 }
+    }
+
     pub(crate) fn parse(&mut self) -> Program {
         let mut res = Vec::new();
         let mut is_end: bool = false;
@@ -93,10 +106,6 @@ impl Parser {
         s
     }
 
-    pub(crate) fn new(tokens: Vec<Token>) -> Self {
-        //eprint!("new parser: tokens:{:?}", tokens);
-        Parser { tokens, curr: 0 }
-    }
     fn at_end(&self) -> bool {
         self.curr == self.tokens.len() - 1
     }
