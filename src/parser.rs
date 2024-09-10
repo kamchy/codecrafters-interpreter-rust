@@ -11,7 +11,7 @@ pub(crate) struct Parser {
     curr: usize,
 }
 /// Statement can be either a print statement or expression statement
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub(crate)  enum Stmt {
     Print(Expression),
     Expression(Expression)
@@ -23,14 +23,8 @@ impl Stmt {
             Stmt::Expression(e) => e.is_valid()
         }
     }
-
-    fn to_string(&self) -> String {
-        match self {
-            Stmt::Print(e) => e.to_string(),
-            Stmt::Expression(e) => e.to_string()
-        }
-    }
 }
+
 impl Display for Stmt {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -42,7 +36,7 @@ impl Display for Stmt {
 
 
 /// Prorgam is a vector of statements
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub(crate) struct Program {
     pub statements: Vec<Stmt>,
 }
@@ -57,8 +51,11 @@ impl Program {
     pub(crate) fn syntax_errors(&self) -> Option<Stmt> {
         self.statements.iter().filter(|s| !s.is_valid()).take(1).next().map(|s| s.to_owned())
     }
-    pub(crate) fn to_string(&self) -> String {
-        self.statements.iter().map(|s| s.to_string()).collect()
+
+}
+impl Display for Program {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_fmt(format_args!("{}", self.statements.iter().map(|s| s.to_string()).collect::<String>()))
     }
 }
 
@@ -244,7 +241,7 @@ impl Parser {
 
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub(crate) enum Binary {
     Plus,
     Minus,
@@ -296,7 +293,7 @@ impl Binary {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub(crate) enum Unary {
     Minus,
     Not,
@@ -324,7 +321,7 @@ impl Unary {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub(crate) enum Expression {
     Primary(Token),
     BinaryEx(Box<Expression>, Binary, Box<Expression>),
