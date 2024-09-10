@@ -18,6 +18,10 @@ impl<'a> Lexer<'a> {
             line: 1,
         }
     }
+    pub(crate)  fn tokens(&mut self) -> Vec<Token> {
+        self.into_iter().collect()
+    }
+
     fn match_or_skip(&mut self) -> Option<Token> {
         let p = &mut self.iter;
         let next = p.peek();

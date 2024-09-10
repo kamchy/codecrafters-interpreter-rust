@@ -13,6 +13,7 @@ use evaluator::EvalError;
 use evaluator::EvalResult;
 use evaluator::StatementEvalResult;
 use evaluator::StatementResult;
+use lexer::Lexer;
 use parser::Stmt;
 use token::Token;
 use utils::contents;
@@ -41,14 +42,10 @@ fn main() -> ExitCode {
     }
 }
 
-pub(crate) fn tokenize_string(s: &str) -> Vec<token::Token> {
-    let lexer = lexer::Lexer::new(s);
-    lexer.into_iter().collect()
-}
 
 fn tokenize(s: &str) -> ExitCode {
     let mut exit_code = ExitCode::SUCCESS;
-    for token in tokenize_string(s) {
+    for token in Lexer::new(s).tokens() {
         match token.typ {
             token::TokenType::Unknown(_) => {
                 eprintln!("{}", token);
@@ -60,7 +57,7 @@ fn tokenize(s: &str) -> ExitCode {
     exit_code
 }
 fn parse_with_code_and_errstmt(s: &str) -> (parser::Program, u8, Option<Stmt>) {
-    let tokens: Vec<Token> = tokenize_string(s);
+    let tokens: Vec<Token> = Lexer::new(s).tokens();
 
     let mut parser = parser::Parser::new(tokens);
     let prog = parser.parse();
@@ -83,7 +80,7 @@ fn parse_with_code(s: &str) -> (parser::Program, u8) {
 
 // TODO Stmt should be a struct with expresion and type
 fn parse(s: &str) -> ExitCode {
-    let (expr, code, errstmt) = parse_with_code_and_errstmt(s);
+    let (expr, code, _errstmt) = parse_with_code_and_errstmt(s);
 
     for s in expr.statements {
         match s {
@@ -127,7 +124,11 @@ fn evaluate_with_code(s: &str) -> (Vec<StatementEvalResult>, Option<EvalError>, 
 fn evaluate(s: &str) -> ExitCode {
     let (result, opt_err, code) = evaluate_with_code(s);
     for r in result {
-        println!("{:?}", r);
+        match r {
+            StatementEvalResult::ExpressionStatementResult(er) => println!("{}", er),
+            StatementEvalResult::PrintStatementResult(er) => println!("{}", er),
+        }
+
     }
     if let Some(err) = opt_err {
         eprint!("{}", err);
