@@ -1,7 +1,5 @@
 use std::env;
-use std::error;
-use std::fs;
-use std::io::{self, Write};
+use std::io::{self, stderr, stdout, Write};
 use std::process::ExitCode;
 mod evaluator;
 mod lexer;
@@ -10,20 +8,20 @@ pub mod tests;
 mod token;
 mod utils;
 use evaluator::EvalError;
-use evaluator::EvalResult;
 use evaluator::StatementEvalResult;
 use evaluator::StatementResult;
 use lexer::Lexer;
 use parser::Stmt;
 use token::Token;
 use utils::contents;
+
 const RUNTIME_ERRROR_CODE: u8 = 70u8;
 const PARSE_ERROR_CODE: u8 = 65u8;
 
 fn main() -> ExitCode {
     let args: Vec<String> = env::args().collect();
     if args.len() < 3 {
-        writeln!(io::stderr(), "Usage: {} tokenize <filename>", args[0]).unwrap();
+        eprint!("Usage: {} tokenize <filename>", args[0]);
         return ExitCode::FAILURE;
     }
 
@@ -31,17 +29,16 @@ fn main() -> ExitCode {
     let filename = &args[2];
 
     match command.as_str() {
-        "tokenize" => tokenize(&contents(&filename)),
-        "parse" => parse(&contents(&filename)),
-        "evaluate" => evaluate(&contents(&filename)),
-        "run" => run(&contents(&filename)),
+        "tokenize" => tokenize(&contents(filename)),
+        "parse" => parse(&contents(filename)),
+        "evaluate" => evaluate(&contents(filename)),
+        "run" => run(&contents(filename)),
         _ => {
-            writeln!(io::stderr(), "Unknown command: {}", command).unwrap();
-            return ExitCode::FAILURE;
+            eprint!("Unknown command: {}", command);
+            ExitCode::FAILURE
         }
     }
 }
-
 
 fn tokenize(s: &str) -> ExitCode {
     let mut exit_code = ExitCode::SUCCESS;
@@ -112,13 +109,21 @@ fn evaluate_with_code(s: &str) -> (Vec<StatementEvalResult>, Option<EvalError>, 
         match sr {
             Ok(ser) => res.push(ser),
             Err(ever) => {
-                opt_err = Some(ever); break;
+                opt_err = Some(ever);
+                break;
             }
         }
     }
 
-    (res, opt_err.clone() , if (code == 0) && opt_err.is_some(){ RUNTIME_ERRROR_CODE } else {code} )
-
+    (
+        res,
+        opt_err.clone(),
+        if (code == 0) && opt_err.is_some() {
+            RUNTIME_ERRROR_CODE
+        } else {
+            code
+        },
+    )
 }
 
 fn evaluate(s: &str) -> ExitCode {
@@ -128,7 +133,6 @@ fn evaluate(s: &str) -> ExitCode {
             StatementEvalResult::ExpressionStatementResult(er) => println!("{}", er),
             StatementEvalResult::PrintStatementResult(er) => println!("{}", er),
         }
-
     }
     if let Some(err) = opt_err {
         eprint!("{}", err);
@@ -136,25 +140,37 @@ fn evaluate(s: &str) -> ExitCode {
     ExitCode::from(code)
 }
 
-
-
-fn print_res(res: Vec<StatementEvalResult>) {
+fn print_resw(w: &mut dyn std::io::Write, res: Vec<StatementEvalResult>) {
     for r in res {
         match r {
             StatementEvalResult::PrintStatementResult(er) => {
-                println!("{}", er);
-            },
-            StatementEvalResult::ExpressionStatementResult(_er) => {
-            },
+                let _ = w.write_fmt(format_args!("{}", er));
+            }
+            StatementEvalResult::ExpressionStatementResult(_er) => {}
         }
     }
 }
 
-fn run(s: &str) -> ExitCode {
+// fn print_res(res: Vec<StatementEvalResult>) {
+//     print_resw(&mut stdout(), res)
+// }
+
+fn runw<W: std::io::Write, E: std::io::Write>(out: &mut W, err: &mut E, s: &str) -> ExitCode {
     let (result, opt_err, code) = evaluate_with_code(s);
-    print_res(result);
-    if let Some(e)  = opt_err {
-        eprintln!("{}", e);
+    print_resw(out, result);
+    if let Some(e) = opt_err {
+        let _ = err.write_fmt(format_args!("{}", e));
     }
     ExitCode::from(code)
 }
+fn run(s: &str) -> ExitCode {
+    runw(&mut stdout(), &mut stderr(), s)
+}
+// fn run(s: &str) -> ExitCode {
+//     let (result, opt_err, code) = evaluate_with_code(s);
+//     print_res(result);
+//     if let Some(e)  = opt_err {
+//         eprintln!("{}", e);
+//     }
+//     ExitCode::from(code)
+// }

@@ -1,6 +1,5 @@
 use crate::token;
 use core::fmt::Display;
-use std::thread::current;
 use token::{Token, TokenType};
 
 /// Parser for lox.
@@ -12,15 +11,15 @@ pub(crate) struct Parser {
 }
 /// Statement can be either a print statement or expression statement
 #[derive(Debug, Clone, PartialEq)]
-pub(crate)  enum Stmt {
+pub(crate) enum Stmt {
     Print(Expression),
-    Expression(Expression)
+    Expression(Expression),
 }
 impl Stmt {
-    fn is_valid(&self)->bool {
+    fn is_valid(&self) -> bool {
         match self {
             Stmt::Print(e) => e.is_valid(),
-            Stmt::Expression(e) => e.is_valid()
+            Stmt::Expression(e) => e.is_valid(),
         }
     }
 }
@@ -29,11 +28,10 @@ impl Display for Stmt {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Stmt::Print(e) => f.write_fmt(format_args!("{}", e)),
-            Stmt::Expression(e) => f.write_fmt(format_args!("{}", e))
+            Stmt::Expression(e) => f.write_fmt(format_args!("{}", e)),
         }
     }
 }
-
 
 /// Prorgam is a vector of statements
 #[derive(Debug, PartialEq)]
@@ -41,21 +39,26 @@ pub(crate) struct Program {
     pub statements: Vec<Stmt>,
 }
 
-
 impl Program {
-    fn new(v: Vec<Stmt>) -> Self {
-        eprint!("Constructed Program with statements: \n{:?}", v);
-        Program {statements: v }
-    }
-      /// returns optional first syntax error
+    /// returns optional first syntax error
     pub(crate) fn syntax_errors(&self) -> Option<Stmt> {
-        self.statements.iter().filter(|s| !s.is_valid()).take(1).next().map(|s| s.to_owned())
+        self.statements
+            .iter()
+            .filter(|s| !s.is_valid())
+            .take(1)
+            .next()
+            .map(|s| s.to_owned())
     }
-
 }
 impl Display for Program {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_fmt(format_args!("{}", self.statements.iter().map(|s| s.to_string()).collect::<String>()))
+        f.write_fmt(format_args!(
+            "{}",
+            self.statements
+                .iter()
+                .map(|s| s.to_string())
+                .collect::<String>()
+        ))
     }
 }
 
@@ -70,18 +73,17 @@ impl Parser {
         let mut res = Vec::new();
         let mut is_end: bool = false;
         while !is_end {
-                res.push(self.statement());
-                is_end = self.at_end();
-
+            res.push(self.statement());
+            is_end = self.at_end();
         }
         Program { statements: res }
     }
 
     fn statement(&mut self) -> Stmt {
         let c = self.current();
-        let s = match c.typ{
+        let s = match c.typ {
             TokenType::Print => self.print_statement(),
-            _ => self.expression_statement()
+            _ => self.expression_statement(),
         };
         s
     }
@@ -95,7 +97,7 @@ impl Parser {
         s
     }
 
-    fn expression_statement(&mut self) -> Stmt{
+    fn expression_statement(&mut self) -> Stmt {
         let s = Stmt::Expression(self.expression());
         if self.current().typ == TokenType::Semicolon {
             self.advance();
@@ -238,7 +240,6 @@ impl Parser {
         self.advance();
         prim
     }
-
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -331,10 +332,7 @@ pub(crate) enum Expression {
 }
 impl Expression {
     fn is_valid(&self) -> bool {
-        match self {
-            Self::Invalid(_) => false,
-            _ => true
-       }
+        !matches!(self, Self::Invalid(_))
     }
 }
 

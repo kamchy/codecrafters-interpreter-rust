@@ -1,33 +1,31 @@
-use core::panic;
-
-use crate::{token::*, *};
-
-
-
-#[test]
-fn parse_with_exit_0() {
-    let (_, code) = parse_with_code("(true)");
-    assert_eq!(code, 0)
-}
-
-#[test]
-fn parse_with_exit_65() {
-    let (_, code) = parse_with_code("(true");
-    assert_eq!(code, 65)
-}
-
-
-#[derive(Debug)]
 #[cfg(test)]
-struct Case<'a> {
-    inp: &'a str,
-    outp: &'a str,
-    code: u8,
-}
+mod tests_main {
 
-#[test]
-fn evaluate_cases() {
-    let cases: Vec<Case> = vec![
+    use crate::*;
+
+    #[test]
+    fn parse_with_exit_0() {
+        let (_, code) = parse_with_code("(true)");
+        assert_eq!(code, 0)
+    }
+
+    #[test]
+    fn parse_with_exit_65() {
+        let (_, code) = parse_with_code("(true");
+        assert_eq!(code, 65)
+    }
+
+    #[derive(Debug)]
+
+    pub(crate) struct Case<'a> {
+        inp: &'a str,
+        outp: &'a str,
+        code: u8,
+    }
+
+    #[test]
+    fn evaluate_cases() {
+        let cases: Vec<Case> = vec![
         Case {
             inp: "-73",
             outp: "-73",
@@ -111,48 +109,29 @@ fn evaluate_cases() {
         },
     ];
 
-    for c in cases {
+        for c in cases {
+            let (eres, num, actual_code) = evaluate_with_code(c.inp);
+            eprint!("|Err: {:?} | Input: {} | Expr: {:?} \n", num, c.inp, eres);
+            assert_eq!(
+                actual_code, c.code,
+                "Expected code: {}, got: {}",
+                c.code, actual_code
+            );
 
-        let (eres, num, actual_code) = evaluate_with_code(c.inp);
-        eprint!("|Err: {:?} | Input: {} | Expr: {:?} \n", num, c.inp, eres);
-        assert_eq!(actual_code, c.code, "Expected code: {}, got: {}", c.code, actual_code);
-
-        if let Some(err) = num {
-            let s = err.to_string();
-            assert_eq!(s, c.outp, "Error: should be {}, was {}", c.outp, s);
-        } else  if let Some(v)  = eres.first() {
-            let actual_expression_string: String = match v {
-                StatementEvalResult::PrintStatementResult(fin) => fin.to_string(),
-                StatementEvalResult::ExpressionStatementResult(fin) => fin.to_string(),
-            };
-            assert_eq!(c.outp,actual_expression_string, "Expected: {}, actual {}",  c.outp, actual_expression_string);
+            if let Some(err) = num {
+                let s = err.to_string();
+                assert_eq!(s, c.outp, "Error: should be {}, was {}", c.outp, s);
+            } else if let Some(v) = eres.first() {
+                let actual_expression_string: String = match v {
+                    StatementEvalResult::PrintStatementResult(fin) => fin.to_string(),
+                    StatementEvalResult::ExpressionStatementResult(fin) => fin.to_string(),
+                };
+                assert_eq!(
+                    c.outp, actual_expression_string,
+                    "Expected: {}, actual {}",
+                    c.outp, actual_expression_string
+                );
+            }
         }
-
-        // match (r, num, code) {
-        //     (eres, num) => {
-        //         let v = eres.first().unwrap();
-        //         let outv: String = match v {
-        //             StatementEvalResult::PrintStatementResult(fin) => fin.to_string(),
-        //             StatementEvalResult::ExpressionStatementResult(fin) => fin.to_string(),
-        //         };
-        //         assert_eq!(
-        //             true,
-        //             outv.starts_with(c.outp),
-        //             "Testing case {:?} got {}",
-        //             c,
-        //             outv
-        //         );
-        //         assert_eq!(num, c.code);
-        //     }
-        //     (Err(ee), num) => {
-        //         if ee.s.starts_with("Operand must be a number.") {
-        //             assert_eq!(num, RUNTIME_ERRROR_CODE);
-        //             assert_eq!(ee.s, "Operand must be a number.\n[Line 1]");
-        //         } else {
-        //             assert_eq!(ee.s, c.outp);
-        //             assert_eq!(num, c.code, "Case {:?} has code {}", c, num);
-        //         }
-        //     }
-        // }
     }
 }
