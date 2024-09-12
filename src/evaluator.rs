@@ -305,12 +305,45 @@ mod test_evaluator {
     use core::panic;
 
     use crate::{
-        evaluator::EvalResult,
-        token::{self, Numeric, Token, TokenType},
+        evaluator::EvalResult, lexer::LineNum, token::{self, Numeric, Token, TokenType}
     };
 
     use super::Evaluator;
 
+
+    impl Token {
+        pub(crate) fn of_bool(b: bool, ln: LineNum) -> Token {
+            let tt = if b { TokenType::True } else { TokenType::False };
+            Token {
+                typ: tt.clone(),
+                ln,
+                s: tt.to_string(),
+            }
+        }
+
+        pub(crate) fn of_string(s: &str, ln: LineNum) -> Token {
+            Token {
+                typ: TokenType::StringLiteral,
+                ln,
+                s: s.to_string(),
+            }
+        }
+
+        pub(crate) fn of_numeric(n: Numeric, ln: LineNum) -> Token {
+            Token {
+                typ: TokenType::Number(n.clone()),
+                ln,
+                s: n.to_string(),
+            }
+        }
+        pub(crate) fn nil(ln: LineNum) -> Token {
+            Token {
+                typ: TokenType::Nil,
+                ln,
+                s: "nil".to_string(),
+            }
+        }
+    }
     #[test]
     fn eval_true() {
         simple_eval_value(true);

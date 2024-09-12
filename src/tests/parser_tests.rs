@@ -1,4 +1,3 @@
-use crate::lexer::Lexer;
 
 #[cfg(test)]
 fn assert_parsed_text_result(text: &str, expected: &str) {

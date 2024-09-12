@@ -4,7 +4,7 @@
 61 == "61" 	false
 57 > -65 	true
 11 >= 11 	true
-(54 - 67) >= -(114 / 57 + 11)
+(54 - 67) >= -(114 / 57 + 11) 	true
 "hello" + " world!" 	hello world!
 "42" + "24" 	4224
 "foo" + "bar" 	foobar
@@ -29,7 +29,7 @@
 true 	true
 false 	false
 nil 	nil
--"foo" 	Operand must be a number.
--true 	Operand must be a number.
--("foo" + "bar") 	Operand must be a number.
--false 	Operand must be a number.
+-"foo" 	Operand must be a number.\n[Line 1]
+-true 	Operand must be a number.\n[Line 1]
+-("foo" + "bar") 	Operand must be a number.\n[Line 1]
+-false 	Operand must be a number.\n[Line 1]
