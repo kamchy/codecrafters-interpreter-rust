@@ -1,5 +1,5 @@
 use std::env;
-use std::io::{self, stderr, stdout, Write};
+use std::io::{stderr, stdout};
 use std::process::ExitCode;
 mod evaluator;
 mod lexer;

@@ -81,11 +81,10 @@ impl Parser {
 
     fn statement(&mut self) -> Stmt {
         let c = self.current();
-        let s = match c.typ {
+        match c.typ {
             TokenType::Print => self.print_statement(),
             _ => self.expression_statement(),
-        };
-        s
+        }
     }
 
     fn print_statement(&mut self) -> Stmt {
@@ -205,14 +204,13 @@ impl Parser {
 
     fn unary(&mut self) -> Expression {
         let curr_token = self.current();
-        let expr = match curr_token.typ {
+        match curr_token.typ {
             TokenType::Bang | TokenType::Minus => {
                 self.advance();
                 Expression::UnaryEx(Unary::new(&curr_token), Box::new(self.unary()))
             }
             _ => self.primary(),
-        };
-        expr
+        }
     }
 
     fn primary(&mut self) -> Expression {
@@ -254,7 +252,7 @@ pub(crate) enum Binary {
     GreaterEqual,
     EqualEqual,
     NotEqual,
-    InvalidBinary(Token),
+    Invalid(Token),
 }
 
 impl Display for Binary {
@@ -270,7 +268,7 @@ impl Display for Binary {
             Binary::LessEqual => "<=".to_owned(),
             Binary::EqualEqual => "==".to_owned(),
             Binary::NotEqual => "!=".to_owned(),
-            Binary::InvalidBinary(t) => format!("[invalid binary operator: {}]", t),
+            Binary::Invalid(t) => format!("[invalid binary operator: {}]", t),
         };
 
         f.write_fmt(format_args!("{}", val))
@@ -289,7 +287,7 @@ impl Binary {
             TokenType::GreaterEqual => Binary::GreaterEqual,
             TokenType::EqualEqual => Binary::EqualEqual,
             TokenType::BangEqual => Binary::NotEqual,
-            _ => Binary::InvalidBinary(t.clone()),
+            _ => Binary::Invalid(t.clone()),
         }
     }
 }

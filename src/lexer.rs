@@ -18,7 +18,7 @@ impl<'a> Lexer<'a> {
             line: 1,
         }
     }
-    pub(crate)  fn tokens(&mut self) -> Vec<Token> {
+    pub(crate) fn tokens(&mut self) -> Vec<Token> {
         self.into_iter().collect()
     }
 
@@ -103,7 +103,7 @@ impl<'a> Lexer<'a> {
         let mut curr = p.peek();
         loop {
             match curr {
-                Some(c) if c.is_digit(10) => val_str.push(*c),
+                Some(c) if c.is_ascii_digit() => val_str.push(*c),
                 Some('.') => {
                     if val_str.contains('.') {
                         break Some(Token::new(
@@ -216,7 +216,7 @@ impl<'a> Iterator for Lexer<'a> {
                     self.next()
                 }
                 sp if sp.is_ascii_whitespace() => self.next(),
-                d if d.is_digit(10) || d == '.' => self.parse_number(d),
+                d if d.is_ascii_digit() || d == '.' => self.parse_number(d),
                 a if a.is_ascii_alphabetic() || a == '_' => self.parse_ident(a),
                 unknown => Some(Token::new(
                     TokenType::Unknown(LexicalError::UnknownToken(unknown)),
@@ -224,13 +224,11 @@ impl<'a> Iterator for Lexer<'a> {
                     c.to_string(),
                 )),
             }
+        } else if !self.at_end {
+            self.at_end = true;
+            Some(Token::new(TokenType::Eof, self.line, "".into()))
         } else {
-            if !self.at_end {
-                self.at_end = true;
-                Some(Token::new(TokenType::Eof, self.line, "".into()))
-            } else {
-                None
-            }
+            None
         }
     }
 }
