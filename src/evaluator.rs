@@ -12,7 +12,7 @@ pub type StatementResult = std::result::Result<StatementEvalResult, EvalError>;
 #[derive(Debug, PartialEq)]
 pub enum StatementEvalResult {
     ExpressionStatementResult(EvalResult),
-    PrintStatementResult(EvalResult)
+    PrintStatementResult(EvalResult),
 }
 /// Result of expression evaluation
 #[derive(Debug, PartialEq)]
@@ -55,11 +55,11 @@ impl Clone for EvalResult {
     fn clone(&self) -> Self {
         match self {
             Self::Numeric { value, token } => Self::Numeric {
-                value: value.clone(),
+                value: *value,
                 token: token.clone(),
             },
             Self::Boolean { value, token } => Self::Boolean {
-                value: value.clone(),
+                value: *value,
                 token: token.clone(),
             },
             Self::String { value, token } => Self::String {
@@ -143,7 +143,9 @@ impl Evaluator {
                 } => match unary {
                     Unary::Minus => Ok(EvalResult::of_numeric(-n, tok)),
                     Unary::Not => Ok(EvalResult::of_boolean(n == 0.0, tok)),
-                    _ => runtime_error("Numeric arg can only be used with <minus> operator", tok.ln),
+                    _ => {
+                        runtime_error("Numeric arg can only be used with <minus> operator", tok.ln)
+                    }
                 },
                 EvalResult::Reserved {
                     value: word,
@@ -183,24 +185,22 @@ impl Evaluator {
         calculate(lr?, op, rr?)
     }
 
-    pub(crate) fn eval(&self, p: Program) -> Vec<StatementResult>{
-        p.statements.iter().map(|s| self.eval_stmt(s.clone())).collect()
-
+    pub(crate) fn eval(&self, p: Program) -> Vec<StatementResult> {
+        p.statements
+            .iter()
+            .map(|s| self.eval_stmt(s.clone()))
+            .collect()
     }
 
     fn eval_stmt(&self, s: Stmt) -> StatementResult {
-        let res = match s {
-            Stmt::Print(e) => {
-                self.eval_expr(e).map(|r| StatementEvalResult::PrintStatementResult(r))
-                //Ok(StatementEvalResult::PrintStatementResult(self.eval_expr(e)))
-            },
-            Stmt::Expression(e) => {
-                self.eval_expr(e).map(|r| StatementEvalResult::ExpressionStatementResult(r))
-                //Ok(StatementEvalResult::ExpressionStatementResult(self.eval_expr(e)))
-            },
-        };
-
-        res
+        match s {
+            Stmt::Print(e) => self
+                .eval_expr(e)
+                .map(StatementEvalResult::PrintStatementResult),
+            Stmt::Expression(e) => self
+                .eval_expr(e)
+                .map(StatementEvalResult::ExpressionStatementResult),
+        }
     }
 
     pub fn eval_expr(&self, e: Expression) -> Result {
@@ -215,11 +215,13 @@ impl Evaluator {
 }
 
 fn runtime_error(arg: &str, ln: u64) -> Result {
-    Err(EvalError { s: format!("{}\n[Line {}]", arg.to_string(), ln) })
+    Err(EvalError {
+        s: format!("{}\n[Line {}]", arg, ln),
+    })
 }
 
 fn calculate(lv: EvalResult, op: Binary, rv: EvalResult) -> Result {
-    let res = match lv {
+    match lv {
         EvalResult::Numeric {
             value: l,
             token: ref ltok,
@@ -238,7 +240,7 @@ fn calculate(lv: EvalResult, op: Binary, rv: EvalResult) -> Result {
                 Binary::GreaterEqual => Ok(EvalResult::of_boolean(l >= r, ltok)),
                 Binary::EqualEqual => Ok(EvalResult::of_boolean(l == r, ltok)),
                 Binary::NotEqual => Ok(EvalResult::of_boolean(l != r, ltok)),
-                Binary::InvalidBinary(_) => runtime_error("Invalid binary operator", ltok.ln),
+                Binary::Invalid(_) => runtime_error("Invalid binary operator", ltok.ln),
             },
             EvalResult::String {
                 value: ref _s,
@@ -246,7 +248,9 @@ fn calculate(lv: EvalResult, op: Binary, rv: EvalResult) -> Result {
             } => match op {
                 Binary::EqualEqual => Ok(EvalResult::of_boolean(false, ltok)),
                 Binary::NotEqual => Ok(EvalResult::of_boolean(false, ltok)),
-                Binary::Plus => runtime_error("Operands must be two numbers or two strings.", ltok.ln),
+                Binary::Plus => {
+                    runtime_error("Operands must be two numbers or two strings.", ltok.ln)
+                }
                 _ => runtime_error("Only num != str and num == str supported", ltok.ln),
             },
             _ => runtime_error("Operands must be numbers.", ltok.ln),
@@ -269,35 +273,47 @@ fn calculate(lv: EvalResult, op: Binary, rv: EvalResult) -> Result {
                 token: ref _rtok,
             } => match op {
                 Binary::Multiply => Ok(EvalResult::of_string(l.repeat(n.round() as usize), ltok)),
-                Binary::Plus => runtime_error("Operands must be two numbers or two strings.", ltok.ln),
+                Binary::Plus => {
+                    runtime_error("Operands must be two numbers or two strings.", ltok.ln)
+                }
                 _ => runtime_error("Only str*num and str+str allowed", ltok.ln),
             },
             _ => runtime_error("No other binary operations on strings", ltok.ln),
         },
-        EvalResult::Boolean { value: lv, token: ltok } => match rv {
-            EvalResult::Boolean { value: rv, token: _rtok } => match op {
-                Binary::EqualEqual => Ok(EvalResult::Boolean { value: lv == rv, token: ltok }),
-                Binary::NotEqual => Ok(EvalResult::Boolean { value: lv != rv, token: ltok }),
-                _ => runtime_error("Bool operators allowed: only == and !=.", ltok.ln)
+        EvalResult::Boolean {
+            value: lv,
+            token: ltok,
+        } => match rv {
+            EvalResult::Boolean {
+                value: rv,
+                token: _rtok,
+            } => match op {
+                Binary::EqualEqual => Ok(EvalResult::Boolean {
+                    value: lv == rv,
+                    token: ltok,
+                }),
+                Binary::NotEqual => Ok(EvalResult::Boolean {
+                    value: lv != rv,
+                    token: ltok,
+                }),
+                _ => runtime_error("Bool operators allowed: only == and !=.", ltok.ln),
             },
             _ => match op {
-                Binary::EqualEqual => Ok(EvalResult::Boolean { value: false, token: ltok }),
-                Binary::NotEqual => Ok(EvalResult::Boolean { value: true, token: ltok }),
+                Binary::EqualEqual => Ok(EvalResult::Boolean {
+                    value: false,
+                    token: ltok,
+                }),
+                Binary::NotEqual => Ok(EvalResult::Boolean {
+                    value: true,
+                    token: ltok,
+                }),
                 Binary::Multiply => runtime_error("Operands must be numbers.", ltok.ln),
-                _ => runtime_error("Operator not supported", ltok.ln)
-            }
-        }
+                _ => runtime_error("Operator not supported", ltok.ln),
+            },
+        },
 
         _ => runtime_error("Expected numeric arg", 1),
-    };
-    // eprint!(
-    //     "left: {} right: {}, op: {}| result: {:?}\n",
-    //     lv.clone(),
-    //     rv.clone(),
-    //     op,
-    //     res
-    // );
-    res
+    }
 }
 
 #[cfg(test)]
@@ -305,11 +321,12 @@ mod test_evaluator {
     use core::panic;
 
     use crate::{
-        evaluator::EvalResult, lexer::LineNum, token::{self, Numeric, Token, TokenType}
+        evaluator::EvalResult,
+        lexer::LineNum,
+        token::{self, Numeric, Token, TokenType},
     };
 
     use super::Evaluator;
-
 
     impl Token {
         pub(crate) fn of_bool(b: bool, ln: LineNum) -> Token {
