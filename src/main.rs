@@ -7,14 +7,14 @@ mod parser;
 pub mod tests;
 mod token;
 mod utils;
+mod environment;
 use evaluator::EvalError;
 use evaluator::StatementEvalResult;
 use evaluator::StatementResult;
 use lexer::Lexer;
-use parser::Stmt;
+use parser::{Decl, Stmt};
 use token::Token;
 use utils::contents;
-
 const RUNTIME_ERRROR_CODE: u8 = 70u8;
 const PARSE_ERROR_CODE: u8 = 65u8;
 
@@ -53,7 +53,7 @@ fn tokenize(s: &str) -> ExitCode {
     }
     exit_code
 }
-fn parse_with_code_and_errstmt(s: &str) -> (parser::Program, u8, Option<Stmt>) {
+fn parse_with_code_and_errstmt(s: &str) -> (parser::Program, u8, Option<Decl>) {
     let tokens: Vec<Token> = Lexer::new(s).tokens();
 
     let mut parser = parser::Parser::new(tokens);
@@ -79,10 +79,20 @@ fn parse_with_code(s: &str) -> (parser::Program, u8) {
 fn parse(s: &str) -> ExitCode {
     let (expr, code, _errstmt) = parse_with_code_and_errstmt(s);
 
-    for s in expr.statements {
-        match s {
-            Stmt::Expression(e) => print_expr(e),
-            Stmt::Print(e) => print_expr(e),
+    for d in expr.declarations {
+        match d {
+            Decl::Statement(s) => match s {
+                Stmt::Expression(e) => print_expr(e),
+                Stmt::Print(e) => print_expr(e),
+            },
+            Decl::VarDecl(t, opt_e) => {
+                print!("[ token: [{}], expr: ", t);
+                match opt_e {
+                    Some(e) => print_expr(e),
+                    None => print!("(only decl.)"),
+                }
+                print!("]");
+            }
         }
     }
 
@@ -100,7 +110,7 @@ fn print_expr(e: parser::Expression) {
 
 fn evaluate_with_code(s: &str) -> (Vec<StatementEvalResult>, Option<EvalError>, u8) {
     let (prog, code) = parse_with_code(s);
-    let ev = evaluator::Evaluator {};
+    let mut ev = evaluator::Evaluator::new();
 
     let mut res = Vec::new();
     let mut opt_err = None;
