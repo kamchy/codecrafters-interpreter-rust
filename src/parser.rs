@@ -157,7 +157,7 @@ impl Parser {
     }
 
     fn expression(&mut self) -> Expression {
-        self.equality()
+        self.assignment()
     }
 
     fn equality(&mut self) -> crate::parser::Expression {
@@ -316,6 +316,22 @@ impl Parser {
             }
         }
     }
+
+    fn assignment(&mut self) -> Expression {
+        let expr = self.equality();
+        //let equals: Token = self.current().clone();
+        // see this trick here: https://craftinginterpreters.com/statements-and-state.html#assignment
+        if self.current().typ == TokenType::Equal {
+            self.advance();
+            let value = self.assignment();
+            match expr {
+                Expression::Variable(tok) => Expression::Assign(tok.clone(), Box::new(value)),
+                _ => Expression::Invalid("Invalid assignment target.".to_string()),
+            }
+        } else {
+            expr
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -405,6 +421,7 @@ pub(crate) enum Expression {
     UnaryEx(Unary, Box<Expression>),
     Paren(Box<Expression>),
     Variable(Token),
+    Assign(Token, Box<Expression>),
     Invalid(String),
 }
 impl Expression {
@@ -421,13 +438,14 @@ impl Display for Expression {
                 TokenType::False => f.write_str("false"),
                 TokenType::Nil => f.write_str("nil"),
                 TokenType::Number(v) => f.write_str(&v.to_string()),
-                TokenType::StringLiteral => f.write_str(&t.s), //?
+                TokenType::StringLiteral => f.write_str(&t.s),
                 other => f.write_str(&other.to_string()),
             },
             Self::BinaryEx(l, o, r) => f.write_fmt(format_args!("({} {} {})", o, l, r)),
             Self::UnaryEx(o, e) => f.write_fmt(format_args!("({} {})", o, e)),
             Self::Paren(e) => f.write_fmt(format_args!("(group {})", e)),
             Self::Variable(e) => f.write_fmt(format_args!("(var {})", e)),
+            Self::Assign(t, e) => write!(f, "({} = {})", t, e),
             Self::Invalid(s) => f.write_fmt(format_args!("Parse error: {}", s)),
         }
     }

@@ -1,0 +1,5 @@
+var baz;
+baz = 1;
+print baz;
+print baz = 2;
+print baz;
