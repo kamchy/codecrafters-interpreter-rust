@@ -9,12 +9,42 @@ pub(crate) struct Parser {
     tokens: Vec<Token>,
     curr: usize,
 }
+
+///Declaration can be variable declaration or a statement
+#[derive(Debug, Clone)]
+pub(crate) enum Decl {
+    VarDecl(Token, Option<Expression>),
+    Statement(Stmt),
+}
+impl Decl {
+    fn is_valid(&self) -> bool {
+        match self {
+            Decl::VarDecl(_token, Some(e)) => e.is_valid(),
+            Decl::VarDecl(_token, None) => true,
+            Decl::Statement(stmt) => stmt.is_valid(),
+        }
+    }
+}
+
+impl Display for Decl {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Decl::Statement(s) => write!(f, "{}", s),
+            Decl::VarDecl(t, opt_e) => match opt_e {
+                Some(e) => write!(f, "var {} = {}", t, e),
+                None => write!(f, "var {};", t),
+            },
+        }
+    }
+}
+
 /// Statement can be either a print statement or expression statement
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) enum Stmt {
     Print(Expression),
     Expression(Expression),
 }
+
 impl Stmt {
     fn is_valid(&self) -> bool {
         match self {
@@ -34,27 +64,27 @@ impl Display for Stmt {
 }
 
 /// Prorgam is a vector of statements
-#[derive(Debug, PartialEq)]
+#[derive(Debug)]
 pub(crate) struct Program {
-    pub statements: Vec<Stmt>,
+    pub declarations: Vec<Decl>,
 }
 
 impl Program {
     /// returns optional first syntax error
-    pub(crate) fn syntax_errors(&self) -> Option<Stmt> {
-        self.statements
+    pub(crate) fn syntax_errors(&self) -> Option<Decl> {
+        self.declarations
             .iter()
             .filter(|s| !s.is_valid())
             .take(1)
             .next()
-            .map(|s| s.to_owned())
+            .map(Decl::clone)
     }
 }
 impl Display for Program {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_fmt(format_args!(
             "{}",
-            self.statements
+            self.declarations
                 .iter()
                 .map(|s| s.to_string())
                 .collect::<String>()
@@ -73,10 +103,18 @@ impl Parser {
         let mut res = Vec::new();
         let mut is_end: bool = false;
         while !is_end {
-            res.push(self.statement());
+            res.push(self.declaration());
             is_end = self.at_end();
         }
-        Program { statements: res }
+        Program { declarations: res }
+    }
+
+    fn declaration(&mut self) -> Decl {
+        let c = self.current();
+        match c.typ {
+            TokenType::Var => self.var_declaration(),
+            _ => Decl::Statement(self.statement()),
+        }
     }
 
     fn statement(&mut self) -> Stmt {
@@ -231,12 +269,52 @@ impl Parser {
                     ),
                 }
             }
+            TokenType::Identifier => Expression::Variable(curr),
             _other => Expression::Invalid(
                 format!("[line {}] Error at {}: Expected primary (number,  string, bool, nil)  or left paren", curr.ln, curr.s),
             ),
         };
         self.advance();
         prim
+    }
+
+    fn var_declaration(&mut self) -> Decl {
+        self.advance();
+        if self.current().typ != TokenType::Identifier {
+            Decl::VarDecl(
+                self.current(),
+                Some(Expression::Invalid("Expect variable name.".to_string())),
+            )
+        } else {
+            let ident_token = self.current().clone();
+
+            // println!("Token before initializer: -> {}", self.current());
+            self.advance();
+            let initializer = if self.current().typ == TokenType::Equal {
+                // println!("Token equal: -> {}", self.current());
+                self.advance();
+                // println!("Token after equal: -> {}", self.current());
+
+                Some(self.expression())
+            } else {
+                //self.advance();
+                None
+            };
+
+            // println!("Token after initializer: -> {}", self.current());
+
+            if self.current().typ != TokenType::Semicolon {
+                Decl::VarDecl(
+                    self.current(),
+                    Some(Expression::Invalid(
+                        "Expect ';' after variable declaration.".to_string(),
+                    )),
+                )
+            } else {
+                self.advance();
+                Decl::VarDecl(ident_token, initializer)
+            }
+        }
     }
 }
 
@@ -326,6 +404,7 @@ pub(crate) enum Expression {
     BinaryEx(Box<Expression>, Binary, Box<Expression>),
     UnaryEx(Unary, Box<Expression>),
     Paren(Box<Expression>),
+    Variable(Token),
     Invalid(String),
 }
 impl Expression {
@@ -348,6 +427,7 @@ impl Display for Expression {
             Self::BinaryEx(l, o, r) => f.write_fmt(format_args!("({} {} {})", o, l, r)),
             Self::UnaryEx(o, e) => f.write_fmt(format_args!("({} {})", o, e)),
             Self::Paren(e) => f.write_fmt(format_args!("(group {})", e)),
+            Self::Variable(e) => f.write_fmt(format_args!("(var {})", e)),
             Self::Invalid(s) => f.write_fmt(format_args!("Parse error: {}", s)),
         }
     }

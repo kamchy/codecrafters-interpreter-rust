@@ -1,7 +1,8 @@
 use std::{error::Error, fmt::Display};
 
 use crate::{
-    parser::{Binary, Expression, Program, Stmt, Unary},
+    environment::Environment,
+    parser::{Binary, Decl, Expression, Program, Stmt, Unary},
     token::{Numeric, Token, TokenType},
 };
 
@@ -21,7 +22,9 @@ pub enum EvalResult {
     Boolean { value: bool, token: Token },
     String { value: String, token: Token },
     Reserved { value: String, token: Token },
+    Nil,
 }
+
 impl EvalResult {
     fn of_boolean(value: bool, token: &Token) -> EvalResult {
         Self::Boolean {
@@ -70,6 +73,7 @@ impl Clone for EvalResult {
                 value: value.clone(),
                 token: token.clone(),
             },
+            Self::Nil => Self::Nil,
         }
     }
 }
@@ -80,6 +84,7 @@ impl Display for EvalResult {
             Self::Boolean { value: b, token: _ } => b.to_string(),
             Self::String { value: s, token: _ } => s.to_string(),
             Self::Reserved { value: s, token: _ } => s.to_string(),
+            Self::Nil => "nil".to_string(),
         };
         f.write_str(&s)
     }
@@ -114,11 +119,15 @@ impl Display for EvalError {
 // }
 
 /// Evaluator of expressions
-pub struct Evaluator {}
+pub struct Evaluator {
+    env: Environment,
+}
 
 impl Evaluator {
     pub fn new() -> Self {
-        Evaluator {}
+        Evaluator {
+            env: Environment::new(),
+        }
     }
 
     fn eval_primary(&self, token: Token) -> Result {
@@ -137,6 +146,7 @@ impl Evaluator {
         let res = self.eval_expr(ex);
         match res {
             Ok(val) => match val {
+                EvalResult::Nil => Ok(EvalResult::Nil),
                 EvalResult::Numeric {
                     value: n,
                     token: ref tok,
@@ -185,11 +195,8 @@ impl Evaluator {
         calculate(lr?, op, rr?)
     }
 
-    pub(crate) fn eval(&self, p: Program) -> Vec<StatementResult> {
-        p.statements
-            .iter()
-            .map(|s| self.eval_stmt(s.clone()))
-            .collect()
+    pub(crate) fn eval(&mut self, p: Program) -> Vec<StatementResult> {
+        p.declarations.iter().map(|d| self.eval_decls(d)).collect()
     }
 
     fn eval_stmt(&self, s: Stmt) -> StatementResult {
@@ -209,7 +216,34 @@ impl Evaluator {
             Expression::Paren(e) => self.eval_expr(*e),
             Expression::UnaryEx(unary, ex) => self.eval_unary(unary, *ex),
             Expression::BinaryEx(l, op, r) => self.eval_binary(*l, op, *r),
+            Expression::Variable(t) => self.eval_variable(&t.s),
             Expression::Invalid(s) => Err(EvalError::new(format!("Invalid expresstion: {}", s))),
+        }
+    }
+
+    fn eval_variable(&self, s: &str) -> std::result::Result<EvalResult, EvalError> {
+        self.env
+            .get_var(s)
+            .ok_or(EvalError::new(format!("Undefined variable '{}'.", s)))
+    }
+
+    fn eval_decls(
+        &mut self,
+        d: &crate::parser::Decl,
+    ) -> std::result::Result<StatementEvalResult, EvalError> {
+        match d {
+            Decl::Statement(s) => self.eval_stmt(s.clone()),
+            Decl::VarDecl(t, opt_e) => {
+                let value = match opt_e {
+                    None => Ok(EvalResult::Nil),
+                    Some(e) => self.eval_expr(e.clone()),
+                };
+                value.map(|eval_res| {
+                    StatementEvalResult::ExpressionStatementResult(
+                        self.env.define(t.s.clone(), eval_res),
+                    )
+                })
+            }
         }
     }
 }
