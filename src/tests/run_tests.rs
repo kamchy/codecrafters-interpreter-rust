@@ -1,14 +1,14 @@
 #[cfg(test)]
 mod run_tests {
     use std::fs;
-
+     use colored::Colorize;
     use crate::runw;
 
     #[derive(Debug, Clone)]
     struct FileCase {
         fname: String,
         run_code: String,
-        run_result: String,
+        expected: String,
     }
 
     impl FileCase {
@@ -16,7 +16,7 @@ mod run_tests {
             FileCase {
                 fname: "".to_string(),
                 run_code: "".to_string(),
-                run_result: "".to_string(),
+                expected: "".to_string(),
             }
         }
 
@@ -26,7 +26,7 @@ mod run_tests {
 
             match case_suffix.as_str() {
                 "lox" => self.run_code.push_str(data),
-                "out" => self.run_result.push_str(data),
+                "out" => self.expected.push_str(data),
                 _ => (),
             }
             eprint!(
@@ -91,19 +91,27 @@ mod run_tests {
     #[test]
     fn run_all_lox_and_out_files() {
         if let Ok(v) = prepare("src/tests") {
-            for el in v {
+            let mut copy = Vec::from(v);
+            copy.sort_by_key(|fc|fc.fname.clone());
+            for el in copy {
                 let mut out = std::io::BufWriter::new(Vec::new());
                 let mut err = std::io::BufWriter::new(Vec::new());
 
                 runw(&mut out, &mut err, &el.run_code);
+                let out_result = String::from_utf8(out.into_inner().unwrap()).ok().unwrap();
+                let err_result = String::from_utf8(err.into_inner().unwrap()).ok().unwrap();
                 eprintln!(
                     "-----> Case {}:\ntext:{}\nexp:{}\nout:{}\nerr:{}\n",
-                    el.fname,
-                    el.run_code,
-                    el.run_result,
-                    String::from_utf8(out.into_inner().unwrap()).ok().unwrap(),
-                    String::from_utf8(err.into_inner().unwrap()).ok().unwrap()
+                    el.fname.green(),
+                    el.run_code.yellow(),
+                    el.expected.magenta(),
+                    out_result.green(),
+                    err_result.red(),
                 );
+                let actual_output = format!("{}{}", out_result, err_result);
+                println!("-->{:?}\n-->{:?}", actual_output, el.expected);
+                //assert!(actual_output.eq(&el.expected), "Error in {}", el.fname);
+
             }
         }
     }
