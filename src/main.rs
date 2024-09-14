@@ -154,7 +154,7 @@ fn print_resw(w: &mut dyn std::io::Write, res: Vec<StatementEvalResult>) {
     for r in res {
         match r {
             StatementEvalResult::PrintStatementResult(er) => {
-                let _ = w.write_fmt(format_args!("{}", er));
+                let _ = w.write_fmt(format_args!("{}\n", er));
             }
             StatementEvalResult::ExpressionStatementResult(_er) => {}
         }
