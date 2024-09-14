@@ -1,3 +1,5 @@
-var a = 4;
-var b = 10;
-print a + b;
+var baz = 93;
+var world = 93;
+print baz + world;
+var quz = 93;
+print baz + world + quz;
