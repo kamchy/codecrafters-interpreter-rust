@@ -99,8 +99,8 @@ mod tests_main {
         },
         Case {
             inp: " 234h ",
-            outp: "Invalid expresstion: [line 1] Error at h: Expected primary (number,  string, bool, nil)  or left paren",
-            code: 65,
+            outp: "Undefined variable 'h'.",
+            code: 70,
         },
         Case {
             inp: " if 3",
@@ -114,8 +114,8 @@ mod tests_main {
             eprint!("|Err: {:?} | Input: {} | Expr: {:?} \n", num, c.inp, eres);
             assert_eq!(
                 actual_code, c.code,
-                "Expected code: {}, got: {}",
-                c.code, actual_code
+                "Expected code: {}, got: {} in {:?}",
+                c.code, actual_code, c
             );
 
             if let Some(err) = num {
