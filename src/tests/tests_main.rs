@@ -114,7 +114,7 @@ mod tests_main {
     {
         print world + baz;
 }"#,
-            outp: "Line 6: Block should be closed",
+            outp: "[line 6] Error at end: Expect '}'",
             code: 65
         }
     ];

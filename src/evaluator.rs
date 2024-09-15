@@ -1,4 +1,4 @@
-use std::{borrow::BorrowMut, error::Error, fmt::Display};
+use std::{borrow::BorrowMut, cell::RefCell, error::Error, fmt::Display, rc::Rc};
 
 use crate::{
     environment::Environment,
@@ -260,8 +260,8 @@ impl Evaluator {
 
     /// should add new enf atthis call
     fn eval_block(&mut self, v: Vec<Decl> ) -> StatementResult {
-        // let oldenv = self.env.clone();
-        // self.env = env;
+        let oldenv = self.env.clone();
+        self.env = Environment::new_with_enclosing(oldenv.clone());
         let mut v_eval = Vec::new();
         let mut err: Option<EvalError> = None;
         for s in v {
@@ -272,7 +272,7 @@ impl Evaluator {
         };
 
 
-        // self.env = oldenv;
+        self.env = oldenv;
         let res = err.map_or_else(||  Ok(StatementEvalResult::BlockResult(v_eval)), |eval_error| Err(eval_error));
         res
     }
