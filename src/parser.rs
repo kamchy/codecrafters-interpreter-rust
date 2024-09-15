@@ -44,6 +44,7 @@ pub(crate) enum Stmt {
     Print(Expression),
     Expression(Expression),
     Block(Vec<Decl>),
+    Invalid(String),
 }
 
 impl Stmt {
@@ -52,6 +53,7 @@ impl Stmt {
             Stmt::Print(e) => e.is_valid(),
             Stmt::Expression(e) => e.is_valid(),
             Stmt::Block(v) => v.iter().all(|e| e.is_valid()),
+            Stmt::Invalid(_) => false,
         }
     }
 }
@@ -62,6 +64,7 @@ impl Display for Stmt {
             Stmt::Print(e) => f.write_fmt(format_args!("{}", e)),
             Stmt::Expression(e) => f.write_fmt(format_args!("{}", e)),
             Self::Block(v) => f.write_fmt(format_args!("{:?}", v)),
+            Self::Invalid(s) => f.write_str(s),
         }
     }
 }
@@ -125,7 +128,7 @@ impl Parser {
 
         match c.typ {
             TokenType::Print => self.print_statement(),
-            TokenType::LeftBrace => Stmt::Block(self.block()),
+            TokenType::LeftBrace => self.block(),
             _ => self.expression_statement(),
         }
     }
@@ -139,15 +142,19 @@ impl Parser {
         s
     }
 
-    fn block(&mut self) -> Vec<Decl> {
+    fn block(&mut self) -> Stmt {
         self.advance();
         let mut statements: Vec<Decl> = Vec::new();
         while (self.current().typ != TokenType::RightBrace) && (!self.at_end()) {
             let d = self.declaration();
             statements.push(d);
         }
-        self.advance();
-        statements
+        if self.current().typ == TokenType::RightBrace {
+            self.advance();
+            Stmt::Block(statements)
+        } else {
+            Stmt::Invalid(format!("Line {}: Block should be closed", self.current().ln))
+        }
     }
 
     fn expression_statement(&mut self) -> Stmt {
@@ -303,21 +310,14 @@ impl Parser {
             )
         } else {
             let ident_token = self.current().clone();
-
-            // println!("Token before initializer: -> {}", self.current());
             self.advance();
             let initializer = if self.current().typ == TokenType::Equal {
-                // println!("Token equal: -> {}", self.current());
                 self.advance();
-                // println!("Token after equal: -> {}", self.current());
 
                 Some(self.expression())
             } else {
-                //self.advance();
                 None
             };
-
-            // println!("Token after initializer: -> {}", self.current());
 
             if self.current().typ != TokenType::Semicolon {
                 Decl::VarDecl(

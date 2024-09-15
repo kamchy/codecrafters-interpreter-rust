@@ -80,6 +80,7 @@ fn print_stmt(s: &Stmt) {
         Stmt::Expression(e) => print_expr(e),
         Stmt::Print(e) => print_expr(e),
         Stmt::Block(vec) => print_decls(vec),
+        Stmt::Invalid(s) => println!("{}", s)
     }
 }
 fn print_decl(d: &Decl) {
