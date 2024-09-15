@@ -94,6 +94,7 @@ mod run_tests {
             let mut copy = Vec::from(v);
             copy.sort_by_key(|fc|fc.fname.clone());
             for el in copy {
+                eprint!("Test {}", el.fname);
                 let mut out = std::io::BufWriter::new(Vec::new());
                 let mut err = std::io::BufWriter::new(Vec::new());
 

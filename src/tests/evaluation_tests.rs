@@ -36,6 +36,9 @@ fn run_case(c: Case) {
         let actual_expression_string: String = match v {
             StatementEvalResult::PrintStatementResult(fin) => fin.to_string(),
             StatementEvalResult::ExpressionStatementResult(fin) => fin.to_string(),
+            StatementEvalResult::BlockResult(vec) => format!(
+                "{:?}", vec
+            ),
         };
         assert_eq!(c.evaluated,actual_expression_string, "Expected: {}, actual {}",  c.evaluated, actual_expression_string);
     }
