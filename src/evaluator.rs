@@ -1,4 +1,4 @@
-use std::{error::Error, fmt::Display};
+use std::{borrow::BorrowMut, error::Error, fmt::Display};
 
 use crate::{
     environment::Environment,
@@ -14,6 +14,7 @@ pub type StatementResult = std::result::Result<StatementEvalResult, EvalError>;
 pub enum StatementEvalResult {
     ExpressionStatementResult(EvalResult),
     PrintStatementResult(EvalResult),
+    BlockResult(Vec<StatementEvalResult>)
 }
 /// Result of expression evaluation
 #[derive(Debug, PartialEq)]
@@ -196,7 +197,7 @@ impl Evaluator {
     }
 
     pub(crate) fn eval(&mut self, p: Program) -> Vec<StatementResult> {
-        p.declarations.iter().map(|d| self.eval_decls(d)).collect()
+        p.declarations.iter().map(|d| self.eval_decl(d)).collect()
     }
 
     fn eval_stmt(&mut self, s: Stmt) -> StatementResult {
@@ -207,6 +208,7 @@ impl Evaluator {
             Stmt::Expression(e) => self
                 .eval_expr(e)
                 .map(StatementEvalResult::ExpressionStatementResult),
+            Stmt::Block(v) => self.eval_block(v)
         }
     }
 
@@ -228,7 +230,7 @@ impl Evaluator {
             .ok_or(EvalError::new(format!("Undefined variable '{}'.", s)))
     }
 
-    fn eval_decls(
+    fn eval_decl(
         &mut self,
         d: &crate::parser::Decl,
     ) -> std::result::Result<StatementEvalResult, EvalError> {
@@ -253,6 +255,24 @@ impl Evaluator {
             Ok(er) => self.env.assign(t, er),
             Err(e) => Err(e),
         }
+    }
+
+    /// should add new enf atthis call
+    fn eval_block(&mut self, v: Vec<Decl> ) -> StatementResult {
+        // let oldenv = self.env.clone();
+        // self.env = env;
+        let mut v_eval = Vec::new();
+        let mut err: Option<EvalError> = None;
+        for s in v {
+            match  self.eval_decl(&s) {
+                Ok(sv) => { v_eval.push(sv); },
+                Err(e) => { err = err.or(Some(e)); break; } // should I break?
+            }
+        };
+
+
+        // self.env = oldenv;
+        err.map_or_else(||  Ok(StatementEvalResult::BlockResult(v_eval)), |eval_error| Err(eval_error))
     }
 }
 

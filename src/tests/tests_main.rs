@@ -110,21 +110,22 @@ mod tests_main {
     ];
 
         for c in cases {
-            let (eres, num, actual_code) = evaluate_with_code(c.inp);
-            eprint!("|Err: {:?} | Input: {} | Expr: {:?} \n", num, c.inp, eres);
+            let (eres, opt_error, actual_code) = evaluate_with_code(c.inp);
+            eprint!("|Err: {:?} | Input: {} | Expr: {:?} \n", opt_error, c.inp, eres);
             assert_eq!(
                 actual_code, c.code,
                 "Expected code: {}, got: {} in {:?}",
                 c.code, actual_code, c
             );
 
-            if let Some(err) = num {
+            if let Some(err) = opt_error {
                 let s = err.to_string();
                 assert_eq!(s, c.outp, "Error: should be {}, was {}", c.outp, s);
-            } else if let Some(v) = eres.first() {
-                let actual_expression_string: String = match v {
+            } else if let Some(eval_result) = eres.first() {
+                let actual_expression_string: String = match eval_result {
                     StatementEvalResult::PrintStatementResult(fin) => fin.to_string(),
                     StatementEvalResult::ExpressionStatementResult(fin) => fin.to_string(),
+                    StatementEvalResult::BlockResult(vec) => format!("{:?}", vec)
                 };
                 assert_eq!(
                     c.outp, actual_expression_string,

@@ -11,7 +11,7 @@ pub(crate) struct Parser {
 }
 
 ///Declaration can be variable declaration or a statement
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub(crate) enum Decl {
     VarDecl(Token, Option<Expression>),
     Statement(Stmt),
@@ -43,6 +43,7 @@ impl Display for Decl {
 pub(crate) enum Stmt {
     Print(Expression),
     Expression(Expression),
+    Block(Vec<Decl>),
 }
 
 impl Stmt {
@@ -50,6 +51,7 @@ impl Stmt {
         match self {
             Stmt::Print(e) => e.is_valid(),
             Stmt::Expression(e) => e.is_valid(),
+            Stmt::Block(v) => v.iter().all(|e| e.is_valid()),
         }
     }
 }
@@ -59,6 +61,7 @@ impl Display for Stmt {
         match self {
             Stmt::Print(e) => f.write_fmt(format_args!("{}", e)),
             Stmt::Expression(e) => f.write_fmt(format_args!("{}", e)),
+            Self::Block(v) => f.write_fmt(format_args!("{:?}", v)),
         }
     }
 }
@@ -119,8 +122,10 @@ impl Parser {
 
     fn statement(&mut self) -> Stmt {
         let c = self.current();
+
         match c.typ {
             TokenType::Print => self.print_statement(),
+            TokenType::LeftBrace => Stmt::Block(self.block()),
             _ => self.expression_statement(),
         }
     }
@@ -132,6 +137,17 @@ impl Parser {
             self.advance();
         };
         s
+    }
+
+    fn block(&mut self) -> Vec<Decl> {
+        self.advance();
+        let mut statements: Vec<Decl> = Vec::new();
+        while (self.current().typ != TokenType::RightBrace) && (!self.at_end()) {
+            let d = self.declaration();
+            statements.push(d);
+        }
+        self.advance();
+        statements
     }
 
     fn expression_statement(&mut self) -> Stmt {

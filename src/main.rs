@@ -1,13 +1,13 @@
 use std::env;
 use std::io::{stderr, stdout};
 use std::process::ExitCode;
+mod environment;
 mod evaluator;
 mod lexer;
 mod parser;
 pub mod tests;
 mod token;
 mod utils;
-mod environment;
 use evaluator::EvalError;
 use evaluator::StatementEvalResult;
 use evaluator::StatementResult;
@@ -75,20 +75,40 @@ fn parse_with_code(s: &str) -> (parser::Program, u8) {
     (prog, code)
 }
 
+fn print_stmt(s: &Stmt) {
+    match s {
+        Stmt::Expression(e) => print_expr(e),
+        Stmt::Print(e) => print_expr(e),
+        Stmt::Block(vec) => print_decls(vec),
+    }
+}
+fn print_decl(d: &Decl) {
+    match d {
+        Decl::VarDecl(token, expression) => match expression {
+            Some(e) => println!("var {} = {};", token.s, e),
+            None => println!("var {};", token.s),
+        },
+        Decl::Statement(stmt) => print_stmt(stmt),
+    }
+}
+fn print_stmts(v: &Vec<Stmt>) {
+    v.iter().for_each(print_stmt);
+}
+
+fn print_decls(v: &Vec<Decl>) {
+    v.iter().for_each(print_decl);
+}
 // TODO Stmt should be a struct with expresion and type
 fn parse(s: &str) -> ExitCode {
     let (expr, code, _errstmt) = parse_with_code_and_errstmt(s);
 
     for d in expr.declarations {
         match d {
-            Decl::Statement(s) => match s {
-                Stmt::Expression(e) => print_expr(e),
-                Stmt::Print(e) => print_expr(e),
-            },
+            Decl::Statement(s) => print_stmt(&s),
             Decl::VarDecl(t, opt_e) => {
                 print!("[ token: [{}], expr: ", t);
                 match opt_e {
-                    Some(e) => print_expr(e),
+                    Some(e) => print_expr(&e),
                     None => print!("(only decl.)"),
                 }
                 print!("]");
@@ -99,7 +119,7 @@ fn parse(s: &str) -> ExitCode {
     ExitCode::from(code)
 }
 
-fn print_expr(e: parser::Expression) {
+fn print_expr(e: &parser::Expression) {
     match e {
         parser::Expression::Invalid(ref d) => {
             eprint!("{}", d);
@@ -142,6 +162,7 @@ fn evaluate(s: &str) -> ExitCode {
         match r {
             StatementEvalResult::ExpressionStatementResult(er) => println!("{}", er),
             StatementEvalResult::PrintStatementResult(er) => println!("{}", er),
+            StatementEvalResult::BlockResult(vec) => vec.iter().for_each(|ser| {println!("{:?}", ser);}),
         }
     }
     if let Some(err) = opt_err {
@@ -157,6 +178,7 @@ fn print_resw(w: &mut dyn std::io::Write, res: Vec<StatementEvalResult>) {
                 let _ = w.write_fmt(format_args!("{}\n", er));
             }
             StatementEvalResult::ExpressionStatementResult(_er) => {}
+            StatementEvalResult::BlockResult(vec) => print_resw(w, vec),
         }
     }
 }
