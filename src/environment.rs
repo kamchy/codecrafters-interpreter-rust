@@ -1,6 +1,7 @@
+use core::borrow;
 /// Represents environment - variables and their values in Lox program
 /// This is part of evaluator
-use std::{cell::RefCell, collections::HashMap, hash::Hash, rc::Rc};
+use std::{borrow::Borrow, cell::RefCell, collections::HashMap, hash::Hash, rc::Rc};
 
 use crate::{
     evaluator::{EvalError, EvalResult},
@@ -8,21 +9,21 @@ use crate::{
 };
 #[derive(Clone)]
 pub(crate) struct Environment {
-    parent: Option<Box<Environment>>,
+    enclosig: Option<Box<Environment>>,
     values: HashMap<String, EvalResult>,
 }
 
 impl Environment {
     pub(crate) fn new() -> Self {
         Environment {
-            parent: None,
+            enclosig: None,
             values: HashMap::new(),
         }
     }
 
-    pub(crate) fn from(env: Environment) -> Self {
+    pub(crate) fn new_with_enclosing(env: Environment) -> Self {
         Environment {
-            parent: Some(Box::new(env)),
+            enclosig: Some(Box::new(env)),
             values: HashMap::new(),
         }
     }
@@ -33,7 +34,14 @@ impl Environment {
     }
 
     pub(crate) fn get_var(&self, s: &str) -> Option<EvalResult> {
-        self.values.get(s).map(EvalResult::clone)
+        if let Some(v) = self.values.get(s) {
+            Some(v.clone())
+        } else {
+            match &self.enclosig {
+                Some(e) => e.get_var(s),
+                None => None
+            }
+        }
     }
 
     pub(crate) fn assign(
@@ -42,9 +50,12 @@ impl Environment {
         er: EvalResult,
     ) -> std::result::Result<EvalResult, EvalError> {
         if !self.values.contains_key(&t.s) {
-            Err(EvalError {
-                s: format!("Undefined variable '{}'", &t.s),
-            })
+            match self.enclosig {
+                Some(ref mut ev) => ev.assign(&t, er),
+                None => Err(EvalError {
+                    s: format!("Undefined variable '{}'", &t.s),
+                })
+            }
         } else {
             self.values.insert(t.s.clone(), er.clone());
             Ok(er)
@@ -54,7 +65,7 @@ impl Environment {
 
 #[cfg(test)]
 mod environment_test {
-    use crate::{evaluator::EvalResult, tests, token::{Token, TokenType}};
+    use crate::{evaluator::EvalResult, token::{Token, TokenType}};
 
     use super::Environment;
 
