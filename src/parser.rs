@@ -153,7 +153,7 @@ impl Parser {
             self.advance();
             Stmt::Block(statements)
         } else {
-            Stmt::Invalid(format!("Line {}: Block should be closed", self.current().ln))
+            Stmt::Invalid(format!("[line {}] Error at end: Expect '}}'", self.current().ln))
         }
     }
 

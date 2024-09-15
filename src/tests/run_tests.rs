@@ -111,7 +111,7 @@ mod run_tests {
                 );
                 let actual_output = format!("{}{}", out_result, err_result);
                 println!("-->{:?}\n-->{:?}", actual_output, el.expected);
-                //assert!(actual_output.eq(&el.expected), "Error in {}", el.fname);
+                assert!(actual_output.trim().eq(&el.expected.trim().to_string()), "Error in {}", el.fname);
 
             }
         }
