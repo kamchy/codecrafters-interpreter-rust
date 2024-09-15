@@ -1,0 +1,5 @@
+var a = 1978;
+var b = 2024;
+var days = (b - a + 1) * 365;
+print "Number of days in my life:"
+print days;

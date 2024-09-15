@@ -107,6 +107,16 @@ mod tests_main {
             outp: "Invalid expresstion: [line 1] Error at if: Expected primary (number,  string, bool, nil)  or left paren",
             code: 65,
         },
+        Case {
+            inp: r#"{
+    var world = 67;
+    var baz = 67;
+    {
+        print world + baz;
+}"#,
+            outp: "Line 6: Block should be closed",
+            code: 65
+        }
     ];
 
         for c in cases {

@@ -208,7 +208,8 @@ impl Evaluator {
             Stmt::Expression(e) => self
                 .eval_expr(e)
                 .map(StatementEvalResult::ExpressionStatementResult),
-            Stmt::Block(v) => self.eval_block(v)
+            Stmt::Block(v) => self.eval_block(v),
+            Stmt::Invalid(s) => Err(EvalError { s })
         }
     }
 
@@ -266,13 +267,14 @@ impl Evaluator {
         for s in v {
             match  self.eval_decl(&s) {
                 Ok(sv) => { v_eval.push(sv); },
-                Err(e) => { err = err.or(Some(e)); break; } // should I break?
+                Err(e) => { err = Some(e); break; } // should I break?
             }
         };
 
 
         // self.env = oldenv;
-        err.map_or_else(||  Ok(StatementEvalResult::BlockResult(v_eval)), |eval_error| Err(eval_error))
+        let res = err.map_or_else(||  Ok(StatementEvalResult::BlockResult(v_eval)), |eval_error| Err(eval_error));
+        res
     }
 }
 

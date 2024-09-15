@@ -1,5 +1,6 @@
-var a = 1978;
-var b = 2024;
-var days = (b - a + 1) * 365;
-print "Number of days in my life:"
-print days;
+{
+    var world = 67;
+    var baz = 67;
+    {
+        print world + baz;
+}
